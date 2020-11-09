@@ -2,11 +2,12 @@ import sys
 from types import SimpleNamespace
 from typing import List
 
-sys.path.append("models/uniter")
-import image_retrieval
 from api.model import RetrievalRequest
 from backend.retriever import Retriever
 from logger import backend_logger
+
+sys.path.append("models/uniter")
+import image_retrieval
 
 
 class UniterImageRetriever(Retriever):
