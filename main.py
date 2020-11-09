@@ -2,12 +2,15 @@ import uvicorn
 from fastapi import FastAPI
 from omegaconf import OmegaConf
 
-from api.routers import general_router
+import api.routers.retrieval as retrieval
+import api.routers.general as general
 
 # create the main app
 app = FastAPI()
+
 # include the routers
-app.include_router(general_router)
+app.include_router(general.router)
+app.include_router(retrieval.router, prefix=retrieval.PREFIX)
 
 if __name__ == "__main__":
     # load the config
