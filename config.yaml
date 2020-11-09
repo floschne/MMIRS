@@ -1,2 +1,13 @@
 api:
   port: 8081
+retriever:
+  uniter:
+    n_gpu: 1
+    uniter_dir: ${env:UNITER_DATA_DIR}
+    flickr_dir: ${env:FLICKR_DATA_DIR}
+    model_config: ${env:UNITER_MODEL_CONFIG}
+    num_imgs: 1000
+    batch_size: 50
+    n_data_workers: 0
+    fp16: True
+    pin_mem: True
