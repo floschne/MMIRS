@@ -1,0 +1,28 @@
+# run: conda env create --file environment.yaml
+name: mt
+channels:
+- conda-forge
+dependencies:
+- python==3.7
+- pip
+- mpi4py~=3.0.3
+- nvidia-apex~=0.1
+- pip:
+    # general requirements
+    - fastapi~=0.61.2
+    - pydantic~=1.7.2
+    - uvicorn~=0.12.2
+    - pytest~=6.1.2
+    - requests~=2.24.0
+    - omegaconf~=2.0.4
+
+    # uniter requirements
+    - tqdm~=4.51.0
+    - torch~=1.7.0
+    - torchvision~=0.8.1
+    - tensorboardX~=2.1
+    - pandas~=1.1.4
+    - numpy~=1.19.4
+    - lmdb~=1.0.0
+    - lz4~=3.1.0
+    - horovod~=0.20.3
