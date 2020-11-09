@@ -1,3 +1,4 @@
 [submodule "models/uniter"]
 	path = models/uniter
 	url = https://github.com/floschne/UNITER
+	branch = image_retrieval
