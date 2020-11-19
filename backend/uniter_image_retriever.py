@@ -2,6 +2,8 @@ import sys
 from types import SimpleNamespace
 from typing import List
 
+from loguru import logger
+
 from api.model import RetrievalRequest
 from backend.retriever import Retriever
 from logger import backend_logger
@@ -15,6 +17,7 @@ class UniterImageRetriever(Retriever):
     def __init__(self):
         super().__init__(retriever_name="uniter")
 
+    @logger.catch
     def get_top_k(self, req: RetrievalRequest) -> List[str]:
         opts = self._build_retrieval_opts(req)
         backend_logger.info(opts)
