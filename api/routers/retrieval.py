@@ -1,12 +1,9 @@
-import base64
-from typing import Union
-
 from fastapi import APIRouter
-from starlette.responses import FileResponse
+from starlette.responses import JSONResponse
 
-from backend import UniterImageRetriever
+from backend import UniterImageRetriever, LighttpImgServer
 from logger import api_logger
-from ..model import RetrievalRequest, StringResponse
+from ..model import RetrievalRequest
 
 router = APIRouter()
 
@@ -14,17 +11,14 @@ PREFIX = '/retrieval'
 TAGS = ["retrieval"]
 
 retriever = UniterImageRetriever()
+image_server = LighttpImgServer()
 
 
 @router.post("/best_matching_image",
              tags=TAGS,
              description="Retrieve the best matching (top-1) image for the query")
-async def best_matching_image(req: RetrievalRequest) -> Union[FileResponse, StringResponse]:
+async def best_matching_image(req: RetrievalRequest) -> JSONResponse:
     api_logger.info("GET request on /best_matching_image")
-    req.top_k = 1  # TODO
-    top_k_paths = retriever.get_top_k(req)
-    if req.base64:
-        with open(str(top_k_paths[0]), "rb") as img_buffer:
-            return StringResponse(value=base64.b64encode(img_buffer.read()).decode('utf-8'))
-    else:
-        return FileResponse(str(top_k_paths[0]))
+    top_k_ids = retriever.get_top_k(req)
+    urls = [image_server.get_img_url(img_id) for img_id in top_k_ids]
+    return JSONResponse(content=urls)

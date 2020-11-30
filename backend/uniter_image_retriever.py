@@ -29,10 +29,9 @@ class UniterImageRetriever(Retriever):
 
         opts.query = req.query
         opts.img_feat_db = self._conf.uniter_dir + "/img_db/flickr30k"
-        opts.img_ds = self._conf.flickr_dir
         opts.checkpoint = self._conf.uniter_dir + "/pretrained/uniter-base.pt"
-        opts.model_config = self._conf.model_config
         opts.meta_file = self._conf.uniter_dir + "/txt_db/itm_flickr30k_test.db/meta.json"
+        opts.model_config = self._conf.model_config
 
         opts.top_k = req.top_k
         opts.bs = self._conf.batch_size

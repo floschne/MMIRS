@@ -1,1 +1,2 @@
+from .lighttp_img_server import LighttpImgServer
 from .uniter_image_retriever import UniterImageRetriever

@@ -1,0 +1,8 @@
+# Make sure to config .env file or set env variables correctly!
+img_srv:
+  image: sebp/lighttpd
+  volumes:
+    - "${LOCAL_IMG_DATA_DIR}:/var/www/localhost/htdocs"
+  ports:
+    - "${IMG_SRV_PORT}:80"
+  tty: true
