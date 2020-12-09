@@ -2,3 +2,6 @@
 	path = models/uniter
 	url = https://github.com/floschne/UNITER
 	branch = image_retrieval
+[submodule "models/teran"]
+	path = models/teran
+	url = https://github.com/floschne/TERAN
