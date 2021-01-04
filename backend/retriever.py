@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from pathlib import Path
+from typing import List, Union
 
 from omegaconf import OmegaConf
 
@@ -16,9 +17,9 @@ class Retriever(object):
         self._conf = OmegaConf.load("config.yaml").retriever[retriever_name]
 
     @abstractmethod
-    def get_top_k(self, req: RetrievalRequest) -> Path:
+    def get_top_k(self, req: RetrievalRequest) -> List[Union[Path, str]]:
         """
         :param req: the request
-        :return: Path to the image(s)
+        :return: Path to or IDs of the image(s)
         """
         pass

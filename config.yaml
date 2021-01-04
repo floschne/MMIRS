@@ -1,6 +1,7 @@
 api:
   port: 8081
 retriever:
+
   uniter:
     n_gpu: 1
     uniter_dir: ${env:UNITER_DATA_DIR}
@@ -10,9 +11,20 @@ retriever:
     n_data_workers: 0
     fp16: True
     pin_mem: True
+
+  teran:
+    device: cpu
+    cuda_device: -1
+    model_config: configs/teran_coco_MrSw_IR_PreComp_API.yaml
+    num_data_workers: 8
+    model: pretrained_models/coco_MrSw.pth.tar
+
 image_server:
   lighttp:
     https: false
     host: localhost
     port: 8082
-    endpoint: /
+    context_path: /
+    datasources:
+      - uniter: /flickr30k/
+      - teran: /coco14/val2014/

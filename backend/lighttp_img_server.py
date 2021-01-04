@@ -1,5 +1,5 @@
 from .image_server import ImageServer
-
+import urllib.parse as url
 
 class LighttpImgServer(ImageServer):
     def __init__(self):
@@ -10,8 +10,9 @@ class LighttpImgServer(ImageServer):
         base_url = "https://" if self._conf.https else "http://"
         base_url += self._conf.host
         base_url += ":" + str(self._conf.port)
-        base_url += self._conf.endpoint
+        base_url += self._conf.context_path
         return base_url
 
-    def get_img_url(self, img_id: str) -> str:
-        return self._base_url + img_id
+    def get_img_url(self, img_id: str, datasource: str = 'teran') -> str:
+        assert datasource in self.datasources
+        return url.urljoin(self._base_url, self.datasources[datasource]) + img_id
