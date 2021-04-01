@@ -44,7 +44,7 @@ class Vocab(object):
         return len(self.attrs_vocab)
 
     def __len__(self):
-        return self.num_objs
+        return self.num_objs + self.num_attrs
 
     def __contains__(self, item):
         return item in self.objs_vocab or item in self.attrs_vocab
