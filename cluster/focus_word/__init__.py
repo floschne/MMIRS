@@ -1,1 +1,1 @@
-from .image_metadata import ROI, ImageMetadata
+from .wtfidf import retrieve_top_k_documents

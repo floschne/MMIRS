@@ -6,7 +6,7 @@ import pandas as pd
 from loguru import logger
 from tqdm import tqdm
 
-from cluster.visual import ImageMetadata
+from cluster.focus_word import ImageMetadata
 
 
 def build_wtf_idf_index(docs: List[ImageMetadata], out_path: Path) -> None:

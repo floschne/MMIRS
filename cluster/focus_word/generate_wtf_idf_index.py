@@ -9,7 +9,7 @@ import requests
 from loguru import logger
 from tqdm import tqdm
 
-from cluster.focus_word import ImageMetadata
+from cluster.focus_word.image_metadata import ImageMetadata
 from cluster.focus_word.vocab import Vocab
 from cluster.focus_word.wtfidf import build_wtf_idf_index
 
