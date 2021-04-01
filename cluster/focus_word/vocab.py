@@ -45,3 +45,12 @@ class Vocab(object):
 
     def __len__(self):
         return self.num_objs
+
+    def __contains__(self, item):
+        return item in self.objs_vocab or item in self.attrs_vocab
+
+    def __getitem__(self, idx):
+        if idx < len(self.objs_vocab):
+            return self.objs_vocab[idx]
+        else:
+            return self.attrs_vocab[idx - len(self.objs_vocab)]
