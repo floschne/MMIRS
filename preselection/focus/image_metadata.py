@@ -4,7 +4,7 @@ from typing import List, Tuple, Dict
 
 import numpy as np
 
-from cluster.visual.vocab import Vocab
+from preselection.focus.visual_vocab import VisualVocab
 
 
 class ROI(object):
@@ -60,7 +60,7 @@ class TermData(object):
 
 
 class ImageMetadata(object):
-    def __init__(self, feat_path: str, vocab: Vocab, octh: float = .2, acth: float = .15, alpha: float = .95):
+    def __init__(self, feat_path: str, vocab: VisualVocab, octh: float = .2, acth: float = .15, alpha: float = .95):
         """
         :param feat_path: path to the feature.npz file
         :param vocab: object and attribute vocabulary. to lookup object and attribute names

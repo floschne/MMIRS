@@ -1,6 +1,6 @@
 # run: CUDA_HOME=/usr/local/cuda-10.1 conda env create -v --file environment.yaml
 # for debug use -vv or -vvv
-name: mt
+name: mmir
 channels:
     - pytorch
     - conda-forge
@@ -23,20 +23,24 @@ dependencies:
     - nltk=3.5
     - pip:
         # general requirements
+        - numpy~=1.19.4
+        - tqdm~=4.51.0
+        - pytest~=6.1.2
+        - pandas~=1.1.4
+        - pyarrow~=3.0.0
+        - loguru==0.5.3
+        - omegaconf~=2.0.4
+
+          # api requirements
         - fastapi~=0.61.2
         - pydantic~=1.7.2
         - uvicorn~=0.12.2
-        - pytest~=6.1.2
         - requests~=2.24.0
-        - omegaconf~=2.0.4
         - aiofiles~=0.6.0
         - pyyaml~=5.3.1
 
         # uniter requirements
-        - tqdm~=4.51.0
         - tensorboardX~=2.1
-        - pandas~=1.1.4
-        - numpy~=1.19.4
         - lmdb~=1.0.0
         - lz4~=3.1.0
         - horovod~=0.20.3
@@ -49,5 +53,8 @@ dependencies:
 
         # teran requirements
         # TODO
-        - pycocotools=2.0.2
-        - transformers=4.0.0
+        - pycocotools==2.0.2
+        - transformers==4.0.0
+
+        # clustering / indexing requirements
+        - pymagnitude==0.1.143
