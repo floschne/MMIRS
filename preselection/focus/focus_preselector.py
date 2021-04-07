@@ -28,8 +28,11 @@ class FocusPreselector(object):
             # perform warm up (first time takes about 20s)
             cls.get_top_k_similar_terms(cls.__singleton, "warmup")
 
-            # load wtf-idf index
+            # load wtf-idf and set multi index
             cls.wtf_idf = pd.read_feather(conf.wtf_idf.index)
+            mi = pd.MultiIndex.from_frame(cls.wtf_idf[['term', 'doc']])
+            cls.wtf_idf = cls.wtf_idf[['wtf_idf']].set_index(mi)
+            logger.info(f"Loaded WTF-IDF Index with {len(cls.wtf_idf)} entries!")
 
             # TODO use spacy for POS Tag, lemma, cleaning etc
             cls.max_focus_tokens = conf.max_focus_tokens
@@ -41,7 +44,7 @@ class FocusPreselector(object):
 
         return cls.__singleton
 
-    @logger.catch(reraise=True)
+    @logger.catch
     def get_top_k_similar_terms(self, focus: str) -> Dict[str, float]:
         # TODO use spacy for tokens, POS, lemma, cleaning etc
         focus_terms = focus.split(' ')
@@ -50,7 +53,7 @@ class FocusPreselector(object):
 
         # term -> similarity as weight
         # largest weight for the 'original' terms if the terms are in the vocab
-        similar_terms = {ft: 1.0 for ft in focus_terms if ft in self.vocab}
+        similar_terms = {ft: 1. for ft in focus_terms if ft in self.vocab}
 
         # compute the similarities between each focus term and all terms in the vocab
         # then keep the top-k and add the term-similarity pairs to the similar terms mapping
