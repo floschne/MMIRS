@@ -12,6 +12,7 @@ from logger import backend_logger
 TERAN_PATH = 'models/teran'
 sys.path.append(TERAN_PATH)
 
+# noinspection PyUnresolvedReferences
 from inference import prepare_model_checkpoint_and_config, load_teran, load_precomputed_image_embeddings, \
     compute_distances, get_image_names, QueryEncoder
 

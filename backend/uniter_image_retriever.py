@@ -8,7 +8,10 @@ from api.model import RetrievalRequest
 from backend.retriever import Retriever
 from logger import backend_logger
 
-sys.path.append("models/uniter")
+UNITER_PATH = 'models/uniter'
+sys.path.append(UNITER_PATH)
+
+# noinspection PyUnresolvedReferences
 import image_retrieval
 
 
