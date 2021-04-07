@@ -61,18 +61,43 @@ def test_top_k_similar_terms_multiple_focus(fps):
 def test_retrieve_top_k_relevant_images_out_of_vocab(fps):
     f = "gyroscope"
     assert f not in fps.vocab
-    relevant = fps.retrieve_top_k_relevant_images(f)
+    k = 100
+    relevant = fps.retrieve_top_k_relevant_images(f, k)
+    assert len(relevant) == k
 
 
 def test_retrieve_top_k_relevant_images(fps):
+    k = 1000
     start = time.time()
-    relevant = fps.retrieve_top_k_relevant_images("green building")
+    relevant = fps.retrieve_top_k_relevant_images("green building", k, weight_by_sim=False)
     logger.debug(f"First took {time.time() - start}s")
+    assert len(relevant) == k
 
     start = time.time()
-    relevant = fps.retrieve_top_k_relevant_images("green building")
+    relevant = fps.retrieve_top_k_relevant_images("green building", k, weight_by_sim=False)
     logger.debug(f"Second took {time.time() - start}s")
+    assert len(relevant) == k
 
     start = time.time()
-    relevant = fps.retrieve_top_k_relevant_images("green building")
+    relevant = fps.retrieve_top_k_relevant_images("green building", k, weight_by_sim=False)
     logger.debug(f"Third took {time.time() - start}s")
+    assert len(relevant) == k
+
+
+def test_retrieve_top_k_relevant_images_weight_by_sim(fps):
+    k = 1000
+    start = time.time()
+    relevant = fps.retrieve_top_k_relevant_images("green building", k, weight_by_sim=True)
+    logger.debug(f"First took {time.time() - start}s")
+    assert len(relevant) == k
+
+    start = time.time()
+    relevant = fps.retrieve_top_k_relevant_images("green building", k, weight_by_sim=True)
+    logger.debug(f"Second took {time.time() - start}s")
+    assert len(relevant) == k
+
+    start = time.time()
+    relevant = fps.retrieve_top_k_relevant_images("green building", k, weight_by_sim=True)
+    logger.debug(f"Third took {time.time() - start}s")
+    assert len(relevant) == k
+

@@ -1,5 +1,7 @@
+import time
 from typing import Dict
 
+import numba
 import numpy as np
 import pandas as pd
 from loguru import logger
@@ -7,6 +9,11 @@ from omegaconf import OmegaConf
 from pymagnitude import Magnitude
 
 from preselection.focus.visual_vocab import VisualVocab
+
+
+@numba.jit
+def weight(row):
+    return row.wtf_idf * row.weight
 
 
 class FocusPreselector(object):
@@ -18,7 +25,6 @@ class FocusPreselector(object):
             cls.__singleton = super(FocusPreselector, cls).__new__(cls)
 
             cls.vocab = VisualVocab()
-
             conf = OmegaConf.load('config.yaml').preselection.focus
 
             # load magnitude
@@ -67,22 +73,66 @@ class FocusPreselector(object):
 
         return similar_terms
 
-    @logger.catch(reraise=True)
-    def retrieve_top_k_relevant_images(self, focus, k: int = 100):
+    @logger.catch
+    def retrieve_top_k_relevant_images(self, focus, k: int = 100, weight_by_sim: bool = False):
+        start = time.time()
         similar_terms = self.get_top_k_similar_terms(focus)
-        doc_scores = {}
-        for term, sim in similar_terms.items():
-            if term in self.wtf_idf.index:
-                # get the relevant term-doc-score triplets
-                rows = self.wtf_idf.xs(term)
-                for _, row in rows.iterrows():
-                    # accumulate the scores for the respective documents
-                    #   -> weight the wtf-idf scores by the term similarity
-                    #   -> the more similar the term, the more relevant is the doc in which the term occurs
-                    try:
-                        doc_scores[row['doc']] += sim * row['wtf_idf']
-                    except:
-                        doc_scores[row['doc']] = sim * row['wtf_idf']
+        logger.debug(f"get_top_k_similar_terms took {time.time() - start}s")
 
-        # return descending sorted docs
-        return sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)[:k]
+        # remove terms which are not in the index
+        start = time.time()
+        # TODO this can be improved!
+        similar_terms = {t: s for t, s in similar_terms.items() if t in self.wtf_idf.index}
+        logger.debug(f"remove terms which are not in the index took {time.time() - start}s")
+
+        # get the relevant entries (i.e. entries that match the similar terms)
+        start = time.time()
+        entries = self.wtf_idf.loc[similar_terms.keys()]
+        logger.debug(f"get the relevant entries took {time.time() - start}s")
+
+        if weight_by_sim:
+            start = time.time()
+            # TODO how to boost performance of creating the weights dict?!
+            weights = np.array([similar_terms[t] for t, _ in entries.index])
+            # create temporary weight dataframe
+            # weights = pd.DataFrame(data=[*similar_terms.items()], columns=['term', 'weight']).set_index('term')
+
+            # weight the wtf-idf scores by multiplying with the similarity of the term
+            # entries = entries.assign(**weights).drop(columns=['weight'])
+            entries['wtf_idf'] = entries['wtf_idf'].to_numpy() * weights
+            # entries = entries.assign(**weights, wtf_idf=lambda x: x.wtf_idf * x.weight).drop(columns=['weight'])
+            # entries = entries.assign(**weights, wtf_idf=weight).drop(columns=['weight'])
+            logger.debug(f"weight_by_sim took {time.time() - start}s")
+
+        # sum the wtf-idf scores and sort descending
+        start = time.time()
+        entries = entries.groupby('doc').sum()
+        logger.debug(f"sum the wtf-idf scores took {time.time() - start}s")
+
+        start = time.time()
+        entries = entries.sort_values(by='wtf_idf', ascending=False)
+        logger.debug(f"sort descending took {time.time() - start}s")
+
+        return entries[:k]
+
+    # naive implementation way to slow (86s for a three token focus word)
+    # @logger.catch(reraise=True)
+    # def retrieve_top_k_relevant_images(self, focus, k: int = 100):
+    #     similar_terms = self.get_top_k_similar_terms(focus)
+    #     doc_scores = {}
+    #
+    #     for term, sim in similar_terms.items():
+    #         if term in self.wtf_idf.index:
+    #             # get the relevant rows
+    #             rows = self.wtf_idf.xs(term)
+    #             for _, row in rows.iterrows():
+    #                 # accumulate the scores for the respective documents
+    #                 #   -> weight the wtf-idf scores by the term similarity
+    #                 #   -> the more similar the term, the more relevant is the doc in which the term occurs
+    #                 try:
+    #                     doc_scores[row['doc']] += sim * row['wtf_idf']
+    #                 except:
+    #                     doc_scores[row['doc']] = sim * row['wtf_idf']
+    #
+    #     # return descending sorted docs
+    #     return sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)[:k]
