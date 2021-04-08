@@ -4,7 +4,7 @@ import pickle
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 import faiss
 import numpy as np
@@ -12,8 +12,10 @@ import pandas as pd
 from loguru import logger
 from sentence_transformers import SentenceTransformer
 
+from preselection.context.context_preselector import load_sentence_embeddings, verify_embedding_structure
 
-def load_corpus(dataset_path: str) -> np.ndarray:
+
+def load_corpus(dataset_path: str) -> Tuple[np.ndarray, np.ndarray]:
     dp = Path(dataset_path)
     assert dp.exists(), f"Cannot read {dataset_path}!"
 
@@ -36,23 +38,11 @@ def load_corpus(dataset_path: str) -> np.ndarray:
         logger.error(f"Cannot read DataFrame from {dataset_path}!")
         sys.exit(1)
 
-    return corpus['caption'].to_numpy()
+    # FIXME do not hard code this
+    # image_id is for f30k and coco
+    corpus_ids = corpus['wikicaps_id' if 'wikicaps_id' in corpus.columns else 'image_id'].to_numpy()
 
-
-def verify_embedding_structure(emb_struct: Dict[str, Any]) -> bool:
-    for key in ['corpus', 'embeddings', 'type', 'model', 'dataset']:
-        assert key in emb_struct.keys(), f"Cannot find key '{key}' in Sentence Embedding Structure!"
-    return True
-
-
-def load_sentence_embeddings(path: Path) -> Dict[str, Any]:
-    assert path.exists(), f"Cannot read {path}!"
-    logger.info(f"Loading Sentence Embedding Structure from {str(path)}")
-    with open(str(path), "rb") as fIn:
-        data = pickle.load(fIn)
-        verify_embedding_structure(data)
-        logger.info(f"Successfully loaded {data['type']} Sentence Embeddings for {data['model']}!")
-        return data
+    return corpus['caption'].to_numpy(), corpus_ids
 
 
 def generate_sentence_embeddings(dataset_name: str,
@@ -61,7 +51,7 @@ def generate_sentence_embeddings(dataset_name: str,
                                  symm_model: str,
                                  asym_model: str,
                                  max_seq_len: int) -> Dict[str, Dict[str, Any]]:
-    corpus = load_corpus(dataset_path)
+    corpus, corpus_ids = load_corpus(dataset_path)
     results = {'symmetric': None, 'asymmetric': None}
 
     op = Path(out_path)
@@ -93,7 +83,7 @@ def generate_sentence_embeddings(dataset_name: str,
                 f"Computing {len(corpus)} {typ} Sentence Embeddings with {model} model! This may take a while...")
             # noinspection PyTypeChecker,PydanticTypeChecker
             embs = embedder.encode_multi_process(corpus, pool)
-            emb_struct = {'corpus': corpus,
+            emb_struct = {'corpus_ids': corpus_ids,
                           'embeddings': embs,
                           'type': typ,
                           'model': model,
