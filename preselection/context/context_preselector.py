@@ -42,10 +42,10 @@ class ContextPreselector(object):
             cls.max_seq_len = conf.sbert.max_seq_len
 
             cls.symmetric_embeddings = {
-                k: load_sentence_embeddings(v) for d in conf.sbert.symmetric_embeddings for k, v in d.items()
+                k: load_sentence_embeddings(Path(v)) for d in conf.sbert.symmetric_embeddings for k, v in d.items()
             }
             cls.asymmetric_embeddings = {
-                k: load_sentence_embeddings(v) for d in conf.sbert.asymmetric_embeddings for k, v in d.items()
+                k: load_sentence_embeddings(Path(v)) for d in conf.sbert.asymmetric_embeddings for k, v in d.items()
             }
 
             logger.info("Loading SentenceTransformer Models into Memory...")
@@ -64,9 +64,10 @@ class ContextPreselector(object):
 
         return cls.__singleton
 
-    def find_top_k_matches(self, query: str, k: int = 10, exact: bool = False):
-        start_time = time.time()
+    def retrieve_top_k_relevant_images(self, query: str, k: int = 10, exact: bool = False):
+        start = time.time()
         # TODO for now we only use symmetric and wicsmmir
+        #   in later versions we want to decide this dynamically by analysing the query (embedding)
         embs = self.symmetric_embeddings['wicsmmir']['embeddings']
         corpus_ids = self.symmetric_embeddings['wicsmmir']['corpus_ids']
         index = self.symmetric_indices['wicsmmir']
@@ -92,5 +93,5 @@ class ContextPreselector(object):
 
         hits = sorted(hits, key=lambda x: x['score'], reverse=True)
         top_k_matches = {corpus_ids[hit['corpus_id']]: hit['score'] for hit in hits[:k]}
-        print(f"took: {time.time() - start_time}s")
+        logger.debug(f"Retrieving top k relevant images with exact={exact} took {time.time() - start}s")
         return top_k_matches

@@ -15,7 +15,7 @@ from sentence_transformers import SentenceTransformer
 from preselection.context.context_preselector import load_sentence_embeddings, verify_embedding_structure
 
 
-def load_corpus(dataset_path: str) -> Tuple[np.ndarray, np.ndarray]:
+def load_corpus(dataset_path: str, dataset: str) -> Tuple[np.ndarray, np.ndarray]:
     dp = Path(dataset_path)
     assert dp.exists(), f"Cannot read {dataset_path}!"
 
@@ -39,6 +39,13 @@ def load_corpus(dataset_path: str) -> Tuple[np.ndarray, np.ndarray]:
         sys.exit(1)
 
     # FIXME do not hard code this
+    if dataset == 'wicsmmir':
+        corpus['wikicaps_id'] = 'wikicaps_' + corpus['wikicaps_id'].astype(str)
+    elif dataset == 'coco':
+        corpus['image_id'] = 'coco_' + corpus['image_id'].astype(str)
+    elif dataset == 'f30k':
+        corpus['image_id'] = 'f30k_' + corpus['image_id'].astype(str)
+
     # image_id is for f30k and coco
     corpus_ids = corpus['wikicaps_id' if 'wikicaps_id' in corpus.columns else 'image_id'].to_numpy()
 
