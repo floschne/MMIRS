@@ -1,5 +1,5 @@
 import time
-from typing import Dict
+from typing import Dict, List
 
 import numba
 import numpy as np
@@ -41,21 +41,39 @@ class FocusPreselector(object):
             logger.info(f"Loaded WTF-IDF Index with {len(cls.wtf_idf)} entries!")
 
             # TODO use spacy for POS Tag, lemma, cleaning etc
-            cls.max_focus_tokens = conf.max_focus_tokens
-            cls.remove_puncts = conf.remove_puncts
-            cls.remove_stopwords = conf.remove_stopwords
+            cls.focus_max_tokens = conf.focus.max_tokens
+            cls.focus_remove_puncts = conf.focus.remove_puncts
+            cls.focus_remove_stopwords = conf.focus.remove_stopwords
+            cls.focus_cased = conf.focus.cased
+            cls.focus_lemmatize = conf.focus.lemmatize
 
             cls.puncts = list('.:,;-_`%&+?!#()[]{}/\\\'"§')
             cls.stopwords = ['the', 'a']
 
         return cls.__singleton
 
-    @logger.catch
-    def get_top_k_similar_terms(self, focus: str) -> Dict[str, float]:
+    def pre_process_focus(self, focus: str) -> List[str]:
         # TODO use spacy for tokens, POS, lemma, cleaning etc
+        if not self.focus_cased:
+            focus = focus.lower()
+        if self.focus_remove_puncts:
+            pass  # TODO
+        if self.focus_lemmatize:
+            pass  # TODO
+        if self.focus_remove_stopwords:
+            pass  # TODO
+        if self.focus_max_tokens:
+            pass  # TODO
+
         focus_terms = focus.split(' ')
         # add the full focus term
         focus_terms.append(focus)
+
+        return focus_terms
+
+    @logger.catch
+    def get_top_k_similar_terms(self, focus: str) -> Dict[str, float]:
+        focus_terms = self.pre_process_focus(focus)
 
         # term -> similarity as weight
         # largest weight for the 'original' terms if the terms are in the vocab
@@ -74,7 +92,7 @@ class FocusPreselector(object):
         return similar_terms
 
     @logger.catch
-    def retrieve_top_k_relevant_images(self, focus, k: int = 100, weight_by_sim: bool = False):
+    def retrieve_top_k_relevant_images(self, focus: str, k: int = 100, weight_by_sim: bool = False) -> Dict[str, float]:
         start = time.time()
         similar_terms = self.get_top_k_similar_terms(focus)
         logger.debug(f"get_top_k_similar_terms took {time.time() - start}s")
@@ -113,7 +131,7 @@ class FocusPreselector(object):
         entries = entries.sort_values(by='wtf_idf', ascending=False)
         logger.debug(f"sort descending took {time.time() - start}s")
 
-        return entries[:k]
+        return entries[:k].to_dict()['wtf_idf']
 
     # naive implementation way to slow (86s for a three token focus word)
     # @logger.catch(reraise=True)

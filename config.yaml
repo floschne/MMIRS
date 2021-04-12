@@ -31,15 +31,17 @@ image_server:
 
 preselection:
   focus:
-    max_focus_tokens: 3  # maximum number of space-separated tokens in the focus word. E.g. "small green bird"
+    max_tokens: 3  # maximum number of space-separated tokens in the focus word. E.g. "small green bird"
     remove_puncts: True # remove punctuations from the focus word # TODO
     remove_stopwords: True # TODO
+    cased: False
+    lemma: True  # TODO
     vocab:
       objs_file: data/vocab/objects_vocab.txt
       attrs_file: data/vocab/attributes_vocab.txt
     magnitude:
       embeddings: data/magnitude/crawl-300d-2M.magnitude
-      top_k_similar: 10  # per focus token
+      top_k_similar: 25  # per focus token
       max_similar: 25  # total
     wtf_idf:
       index: data/wtf_idf/wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index  # TODO generify for multiple datasets
