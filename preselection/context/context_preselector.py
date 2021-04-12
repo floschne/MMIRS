@@ -64,7 +64,7 @@ class ContextPreselector(object):
 
         return cls.__singleton
 
-    def retrieve_top_k_relevant_images(self, query: str, k: int = 10, exact: bool = False):
+    def retrieve_top_k_relevant_images(self, context: str, k: int = 10, exact: bool = False) -> Dict[str, float]:
         start = time.time()
         # TODO for now we only use symmetric and wicsmmir
         #   in later versions we want to decide this dynamically by analysing the query (embedding)
@@ -72,22 +72,22 @@ class ContextPreselector(object):
         corpus_ids = self.symmetric_embeddings['wicsmmir']['corpus_ids']
         index = self.symmetric_indices['wicsmmir']
 
-        # compute query embedding
-        query_embedding = self.sembedders['symm'].encode(query)
+        # compute context embedding
+        context_embedding = self.sembedders['symm'].encode(context)
 
         # normalize vector to unit length, so that inner product is equal to cosine similarity
-        query_embedding = query_embedding / np.linalg.norm(query_embedding)
-        query_embedding = np.expand_dims(query_embedding, axis=0)
+        context_embedding = context_embedding / np.linalg.norm(context_embedding)
+        context_embedding = np.expand_dims(context_embedding, axis=0)
         if not exact:
             # Approximate Nearest Neighbor (ANN) on FAISS INV Index (Voronoi Cells)
             # returns a matrix with distances and corpus ids.
-            distances, cids = index.search(query_embedding, k)
+            distances, cids = index.search(context_embedding, k)
 
             # We extract corpus ids and scores for the first query
             hits = [{'corpus_id': cid, 'score': score} for cid, score in zip(cids[0], distances[0])]
         else:
             # Approximate Nearest Neighbor (ANN) is not exact, it might miss entries with high cosine similarity
-            hits = util.semantic_search(query_embedding,
+            hits = util.semantic_search(context_embedding,
                                         embs,
                                         top_k=k)[0]
 
