@@ -1,4 +1,4 @@
-# Master Thesis Code
+# Multi-Modal Image Retrieval (MMIR)
 This repo holds the code for my Master Thesis at Language Technology (LT) Group of the University of Hamburg  
 
 ## How to run locally
@@ -13,7 +13,7 @@ cd apex
 pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./
 ```
 
-#### Run the app locally
+#### Run the api locally
 Make sure to change the path according to your setup!
 For more control edit: `config.yaml` _(you can also set the data paths there and omit the environment variables)_
 
