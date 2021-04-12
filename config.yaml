@@ -32,10 +32,14 @@ image_server:
 preselection:
   focus:
     max_tokens: 3  # maximum number of space-separated tokens in the focus word. E.g. "small green bird"
-    remove_puncts: True # remove punctuations from the focus word # TODO
-    remove_stopwords: True # TODO
-    cased: False
-    lemma: True  # TODO
+    remove_stopwords: True
+    uncased: True
+    lemmatize: True
+    pos_tags:
+      - NOUN
+      - PROPN
+      - ADJ
+      - VERB
     vocab:
       objs_file: data/vocab/objects_vocab.txt
       attrs_file: data/vocab/attributes_vocab.txt
@@ -45,6 +49,7 @@ preselection:
       max_similar: 25  # total
     wtf_idf:
       index: data/wtf_idf/wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index  # TODO generify for multiple datasets
+    spacy_model: en_core_web_lg
 
   context:
     sbert:

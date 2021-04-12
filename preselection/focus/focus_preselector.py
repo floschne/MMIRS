@@ -4,6 +4,7 @@ from typing import Dict, List
 import numba
 import numpy as np
 import pandas as pd
+import spacy
 from loguru import logger
 from omegaconf import OmegaConf
 from pymagnitude import Magnitude
@@ -31,8 +32,6 @@ class FocusPreselector(object):
             cls.magnitude = Magnitude(conf.magnitude.embeddings)
             cls.top_k_similar = conf.magnitude.top_k_similar
             cls.max_similar = conf.magnitude.max_similar
-            # perform warm up (first time takes about 20s)
-            cls.get_top_k_similar_terms(cls.__singleton, "warmup")
 
             # load wtf-idf and set multi index
             cls.wtf_idf = pd.read_feather(conf.wtf_idf.index)
@@ -40,36 +39,46 @@ class FocusPreselector(object):
             cls.wtf_idf = cls.wtf_idf[['wtf_idf']].set_index(mi)
             logger.info(f"Loaded WTF-IDF Index with {len(cls.wtf_idf)} entries!")
 
-            # TODO use spacy for POS Tag, lemma, cleaning etc
-            cls.focus_max_tokens = conf.focus.max_tokens
-            cls.focus_remove_puncts = conf.focus.remove_puncts
-            cls.focus_remove_stopwords = conf.focus.remove_stopwords
-            cls.focus_cased = conf.focus.cased
-            cls.focus_lemmatize = conf.focus.lemmatize
+            # setup spacy
+            # TODO can we disable some pipeline components to be faster? e.g. ner
+            cls.spacy_nlp = spacy.load(conf.spacy_model)
 
-            cls.puncts = list('.:,;-_`%&+?!#()[]{}/\\\'"§')
-            cls.stopwords = ['the', 'a']
+            cls.focus_max_tokens = conf.max_tokens
+            cls.focus_remove_stopwords = conf.remove_stopwords
+            cls.focus_uncased = conf.uncased
+            cls.focus_lemmatize = conf.lemmatize
+            cls.focus_pos_tags = conf.pos_tags
+
+
+            # perform warm up (first time takes about 20s)
+            cls.get_top_k_similar_terms(cls.__singleton, "warmup")
 
         return cls.__singleton
 
     def pre_process_focus(self, focus: str) -> List[str]:
-        # TODO use spacy for tokens, POS, lemma, cleaning etc
-        if not self.focus_cased:
-            focus = focus.lower()
-        if self.focus_remove_puncts:
-            pass  # TODO
-        if self.focus_lemmatize:
-            pass  # TODO
-        if self.focus_remove_stopwords:
-            pass  # TODO
-        if self.focus_max_tokens:
-            pass  # TODO
+        focus_terms = []
+        for token in self.spacy_nlp(focus):
+            if self.focus_remove_stopwords and token.is_stop:
+                continue
+            if not token.is_punct and token.pos_ in self.focus_pos_tags:
+                # use lemma if lemmatize
+                if self.focus_lemmatize:
+                    tok = token.lemma_
+                else:
+                    tok = token.text
+                # lower case if uncased
+                if self.focus_uncased:
+                    tok = tok.lower()
 
-        focus_terms = focus.split(' ')
-        # add the full focus term
-        focus_terms.append(focus)
+                focus_terms.append(tok)
 
-        return focus_terms
+        # naive fall back if spacy removed too many tokens
+        if len(focus_terms) == 0:
+            focus_terms = focus.split(' ')
+            # add the full focus term
+            focus_terms.append(focus)
+
+        return focus_terms[:self.focus_max_tokens]
 
     @logger.catch
     def get_top_k_similar_terms(self, focus: str) -> Dict[str, float]:

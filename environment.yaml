@@ -12,6 +12,8 @@ dependencies:
     - pytorch=1.7.1
     - cudatoolkit=10.1
 
+    - spacy
+
     # uniter requirements
     - mpi4py~=3.0.3
     - torchvision=0.8.2
