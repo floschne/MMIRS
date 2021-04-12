@@ -9,7 +9,7 @@ from loguru import logger
 from omegaconf import OmegaConf
 from pymagnitude import Magnitude
 
-from preselection.focus.visual_vocab import VisualVocab
+from backend.preselection import VisualVocab
 
 
 @numba.jit

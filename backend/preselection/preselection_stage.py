@@ -5,8 +5,8 @@ from typing import Dict, List
 from loguru import logger
 from omegaconf import OmegaConf
 
-from preselection.context.context_preselector import ContextPreselector
-from preselection.focus.focus_preselector import FocusPreselector
+from backend.preselection import ContextPreselector
+from backend.preselection import FocusPreselector
 
 
 @unique

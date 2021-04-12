@@ -4,7 +4,7 @@ from typing import List, Tuple, Dict
 
 import numpy as np
 
-from preselection.focus.visual_vocab import VisualVocab
+from backend.preselection import VisualVocab
 
 
 class ROI(object):
