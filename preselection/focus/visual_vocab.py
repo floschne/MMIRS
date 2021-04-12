@@ -25,6 +25,9 @@ class VisualVocab(object):
             logger.info(
                 f"Loaded {len(cls.objs_vocab)} Object Categories and {len(cls.attrs_vocab)} Attribute Categories")
 
+            # for some strange reasons there are terms in both lists. e.g. 'windshield' and 'wii'..
+            cls.full_vocab = list(set(cls.objs_vocab + cls.attrs_vocab))
+
         return cls.__singleton
 
     def get_obj_name(self, obj_id: int):
@@ -41,18 +44,11 @@ class VisualVocab(object):
     def num_attrs(self):
         return len(self.attrs_vocab)
 
-    @property
-    def full_vocab(self):
-        return self.objs_vocab + self.attrs_vocab
-
     def __len__(self):
-        return self.num_objs + self.num_attrs
+        return len(self.full_vocab)
 
     def __contains__(self, term):
-        return term in self.objs_vocab or term in self.attrs_vocab
+        return term in self.full_vocab
 
     def __getitem__(self, idx):
-        if idx < len(self.objs_vocab):
-            return self.objs_vocab[idx]
-        else:
-            return self.attrs_vocab[idx - len(self.objs_vocab)]
+        return self.full_vocab[idx]
