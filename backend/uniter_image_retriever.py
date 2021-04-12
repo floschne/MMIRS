@@ -6,7 +6,6 @@ from loguru import logger
 
 from api.model import RetrievalRequest
 from backend.retriever import Retriever
-from logger import backend_logger
 
 UNITER_PATH = 'models/uniter'
 sys.path.append(UNITER_PATH)
@@ -23,7 +22,7 @@ class UniterImageRetriever(Retriever):
     @logger.catch
     def get_top_k(self, req: RetrievalRequest) -> List[str]:
         opts = self._build_retrieval_opts(req)
-        backend_logger.info(opts)
+        logger.info(opts)
 
         return image_retrieval.run_retrieval(opts)
 

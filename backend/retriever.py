@@ -6,14 +6,14 @@ from omegaconf import OmegaConf
 
 from api.model import RetrievalRequest
 from backend.util import SingletonABCMeta
-from logger import backend_logger
+from loguru import logger
 
 
 class Retriever(object):
     __metaclass__ = SingletonABCMeta
 
     def __init__(self, retriever_name: str):
-        backend_logger.info(f"Instantiating {retriever_name} Retriever...")
+        logger.info(f"Instantiating {retriever_name} Retriever...")
         self._conf = OmegaConf.load("config.yaml").retriever[retriever_name]
 
     @abstractmethod

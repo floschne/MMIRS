@@ -2,8 +2,8 @@ import uvicorn
 from fastapi import FastAPI
 from omegaconf import OmegaConf
 
-import api.routers.retrieval as retrieval
 import api.routers.general as general
+import api.routers.retrieval as retrieval
 
 # create the main app
 app = FastAPI()

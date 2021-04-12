@@ -7,7 +7,6 @@ from loguru import logger
 
 from api.model import RetrievalRequest
 from backend.retriever import Retriever
-from logger import backend_logger
 
 TERAN_PATH = 'models/teran'
 sys.path.append(TERAN_PATH)
@@ -22,7 +21,7 @@ class TeranImageRetriever(Retriever):
     def __init__(self):
         super().__init__(retriever_name="teran")
         opts = self._build_retrieval_opts()
-        backend_logger.info(opts)
+        logger.info(opts)
 
         # load teran config and checkpoint
         teran_config, model_checkpoint = prepare_model_checkpoint_and_config(opts)
