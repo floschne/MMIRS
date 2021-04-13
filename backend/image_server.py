@@ -1,14 +1,10 @@
 from abc import abstractmethod
 
-from omegaconf import OmegaConf
-
-from backend.util import SingletonABCMeta
 from loguru import logger
+from omegaconf import OmegaConf
 
 
 class ImageServer(object):
-    __metaclass__ = SingletonABCMeta
-
     def __init__(self, image_srv_name: str):
         logger.info(f"Instantiating {image_srv_name} Image Server...")
         self._conf = OmegaConf.load("config.yaml").image_server[image_srv_name]
@@ -17,8 +13,6 @@ class ImageServer(object):
         for i in range(len(self._conf.datasources)):
             self.datasources.update(self._conf.datasources[i])
         logger.info(f"{image_srv_name} Image Server has datasources: {self.datasources}")
-
-
 
     @abstractmethod
     def get_img_url(self, img_id: str, datasource: str) -> str:

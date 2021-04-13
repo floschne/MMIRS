@@ -3,7 +3,7 @@ import time
 import pytest
 from loguru import logger
 
-from preselection.preselection_stage import PreselectionStage, MergeOp
+from backend.preselection import PreselectionStage, MergeOp
 
 
 @pytest.fixture

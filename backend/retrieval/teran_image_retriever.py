@@ -6,7 +6,7 @@ from typing import List
 from loguru import logger
 
 from api.model import RetrievalRequest
-from backend.retriever import Retriever
+from backend.retrieval.retriever import Retriever
 
 TERAN_PATH = 'models/teran'
 sys.path.append(TERAN_PATH)
@@ -40,7 +40,7 @@ class TeranImageRetriever(Retriever):
     def get_top_k(self, req: RetrievalRequest) -> List[str]:
         # compute query embedding
         query_encoder = QueryEncoder(self.model_config, self.teran)
-        query_embs, query_lengths = query_encoder.compute_query_embedding(req.query)
+        query_embs, query_lengths = query_encoder.compute_query_embedding(req.context)
 
         # compute the matching scores
         distance_sorted_indices = compute_distances(self.img_embs,

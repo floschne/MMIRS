@@ -2,8 +2,9 @@ from fastapi import APIRouter
 from loguru import logger
 from starlette.responses import JSONResponse
 
-from backend import UniterImageRetriever, TeranImageRetriever, LighttpImgServer
-from ..model import RetrievalRequest
+from backend.retrieval import UniterImageRetriever, TeranImageRetriever
+from backend import LighttpImgServer
+from api.model import RetrievalRequest
 
 router = APIRouter()
 

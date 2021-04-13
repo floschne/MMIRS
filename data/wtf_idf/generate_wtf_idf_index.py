@@ -10,8 +10,8 @@ import pandas as pd
 from loguru import logger
 from tqdm import tqdm
 
-from preselection.focus.image_metadata import ImageMetadata
-from preselection.focus.visual_vocab import VisualVocab
+from backend.preselection.focus.image_metadata import ImageMetadata
+from backend.preselection import VisualVocab
 
 
 def generate_metadata(feat_path: str,

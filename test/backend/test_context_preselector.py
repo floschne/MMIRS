@@ -3,7 +3,7 @@ import time
 import pytest
 from loguru import logger
 
-from preselection.context.context_preselector import ContextPreselector
+from backend.preselection import ContextPreselector
 
 
 @pytest.fixture

@@ -5,7 +5,7 @@ from typing import List
 from loguru import logger
 
 from api.model import RetrievalRequest
-from backend.retriever import Retriever
+from backend.retrieval.retriever import Retriever
 
 UNITER_PATH = 'models/uniter'
 sys.path.append(UNITER_PATH)
@@ -29,7 +29,7 @@ class UniterImageRetriever(Retriever):
     def _build_retrieval_opts(self, req: RetrievalRequest):
         opts = SimpleNamespace()
 
-        opts.query = req.query
+        opts.query = req.context
         opts.img_feat_db = self._conf.uniter_dir + "/img_db/flickr30k"
         opts.checkpoint = self._conf.uniter_dir + "/pretrained/uniter-base.pt"
         opts.meta_file = self._conf.uniter_dir + "/txt_db/itm_flickr30k_test.db/meta.json"

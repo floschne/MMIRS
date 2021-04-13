@@ -3,7 +3,7 @@ import time
 import pytest
 from loguru import logger
 
-from preselection.focus.focus_preselector import FocusPreselector
+from backend.preselection import FocusPreselector
 
 
 @pytest.fixture

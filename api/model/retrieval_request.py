@@ -10,7 +10,7 @@ class ModelChoice(str, Enum):
 
 
 class RetrievalRequest(BaseModel):
-    query: str = Field(description="Query to the image retrieval model. E.g. 'Two girls enjoying some icecream.'")
-    difficult_word: Optional[str] = None
+    context: str = Field(description="Query to the image retrieval model. E.g. 'Two girls enjoying some icecream.'")
+    focus: Optional[str] = Field(description="Focus word(s) in the context. E.g. 'icecream'")
     top_k: Optional[int] = 3
     model: Optional[ModelChoice] = 'teran'

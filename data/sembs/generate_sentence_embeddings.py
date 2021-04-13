@@ -12,7 +12,7 @@ import pandas as pd
 from loguru import logger
 from sentence_transformers import SentenceTransformer
 
-from preselection.context.context_preselector import load_sentence_embeddings, verify_embedding_structure
+from backend.preselection import load_sentence_embeddings, verify_embedding_structure
 
 
 def load_corpus(dataset_path: str, dataset: str) -> Tuple[np.ndarray, np.ndarray]:

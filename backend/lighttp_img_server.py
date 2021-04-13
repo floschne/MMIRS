@@ -1,5 +1,7 @@
-from .image_server import ImageServer
 import urllib.parse as url
+
+from .image_server import ImageServer
+
 
 class LighttpImgServer(ImageServer):
     def __init__(self):
