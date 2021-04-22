@@ -1,7 +1,8 @@
 [submodule "models/uniter"]
 	path = models/uniter
 	url = https://github.com/floschne/UNITER
-	branch = image_retrieval
+	branch = mt_ir_api
 [submodule "models/teran"]
 	path = models/teran
 	url = https://github.com/floschne/TERAN
+	branch = mt_ir_api
