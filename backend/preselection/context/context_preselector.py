@@ -7,7 +7,7 @@ import faiss
 import numpy as np
 from loguru import logger
 from omegaconf import OmegaConf
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import util, SentenceTransformer
 
 
 def verify_embedding_structure(emb_struct: Dict[str, Any]) -> bool:
@@ -41,26 +41,39 @@ class ContextPreselector(object):
             cls.asymmetric_model = conf.sbert.asymmetric_model
             cls.max_seq_len = conf.sbert.max_seq_len
 
-            cls.symmetric_embeddings = {
-                k: load_sentence_embeddings(Path(v)) for d in conf.sbert.symmetric_embeddings for k, v in d.items()
-            }
-            cls.asymmetric_embeddings = {
-                k: load_sentence_embeddings(Path(v)) for d in conf.sbert.asymmetric_embeddings for k, v in d.items()
-            }
+            if not conf.use_symmetric and not conf.use_asymmetric:
+                logger.error("Both, use_symmetric and use_asymmetric are set to False!")
+                SystemError("Both, use_symmetric and use_asymmetric are set to False!")
+
+            logger.info("Loading SentenceEmbeddings into Memory...")
+            if conf.use_symmetric:
+                cls.symmetric_embeddings = {
+                    k: load_sentence_embeddings(Path(v)) for d in conf.sbert.symmetric_embeddings for k, v in d.items()
+                }
+            if conf.use_asymmetric:
+                cls.asymmetric_embeddings = {
+                    k: load_sentence_embeddings(Path(v)) for d in conf.sbert.asymmetric_embeddings for k, v in d.items()
+                }
 
             logger.info("Loading SentenceTransformer Models into Memory...")
-            cls.sembedders = {'symm': SentenceTransformer(cls.symmetric_model),
-                              'asym': SentenceTransformer(cls.asymmetric_model)}
+            cls.sembedders = {}
+            if conf.use_symmetric:
+                cls.sembedders['symm'] = SentenceTransformer(cls.symmetric_model)
+            if conf.use_asymmetric:
+                cls.sembedders['asym'] = SentenceTransformer(cls.asymmetric_model)
 
             # setup faiss
+            # TODO check comment regarding nprobe for FlatIPIndex quantizer on github
             cls.faiss_nprobe = conf.faiss.nprobe
             logger.info("Loading FAISS Indices into Memory...")
-            cls.symmetric_indices = {
-                k: faiss.read_index(v) for d in conf.faiss.symmetric_indices for k, v in d.items()
-            }
-            cls.asymmetric_indices = {
-                k: faiss.read_index(v) for d in conf.faiss.asymmetric_indices for k, v in d.items()
-            }
+            if conf.use_symmetric:
+                cls.symmetric_indices = {
+                    k: faiss.read_index(v) for d in conf.faiss.symmetric_indices for k, v in d.items()
+                }
+            if conf.use_asymmetric:
+                cls.asymmetric_indices = {
+                    k: faiss.read_index(v) for d in conf.faiss.asymmetric_indices for k, v in d.items()
+                }
 
         return cls.__singleton
 
@@ -81,12 +94,14 @@ class ContextPreselector(object):
         if not exact:
             # Approximate Nearest Neighbor (ANN) on FAISS INV Index (Voronoi Cells)
             # returns a matrix with distances and corpus ids.
+            index.nprobe = self.faiss_nprobe
             distances, cids = index.search(context_embedding, k)
 
             # We extract corpus ids and scores for the first query
             hits = [{'corpus_id': cid, 'score': score} for cid, score in zip(cids[0], distances[0])]
         else:
-            # Approximate Nearest Neighbor (ANN) is not exact, it might miss entries with high cosine similarity
+            # Approximate Nearest Neighbor (ANN) is not exact, it might miss entries with high cosine similarity / dot p
+            # --> use exact search from sbert
             hits = util.semantic_search(context_embedding,
                                         embs,
                                         top_k=k)[0]
