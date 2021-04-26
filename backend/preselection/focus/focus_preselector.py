@@ -29,18 +29,23 @@ class FocusPreselector(object):
             conf = OmegaConf.load('config.yaml').preselection.focus
 
             # load magnitude
+            logger.info(f"Loading Magnitude Embeddings {conf.magnitude.embeddings}!")
             cls.magnitude = Magnitude(conf.magnitude.embeddings)
             cls.top_k_similar = conf.magnitude.top_k_similar
             cls.max_similar = conf.magnitude.max_similar
 
-            # load wtf-idf and set multi index
-            cls.wtf_idf = pd.read_feather(conf.wtf_idf.index)
-            mi = pd.MultiIndex.from_frame(cls.wtf_idf[['term', 'doc']])
-            cls.wtf_idf = cls.wtf_idf[['wtf_idf']].set_index(mi)
-            logger.info(f"Loaded WTF-IDF Index with {len(cls.wtf_idf)} entries!")
+            # load wtf-idf indices and set multi index
+            logger.info(f"Loading WTF-IDF Indices!")
+            cls.wtf_idf = {}
+            for ds in conf.wtf_idf.keys():
+                df = pd.read_feather(conf.wtf_idf[ds])
+                mi = pd.MultiIndex.from_frame(df[['term', 'doc']])
+                cls.wtf_idf[ds] = df[['wtf_idf']].set_index(mi)
+                logger.info(f"Loaded WTF-IDF Index for {ds} with {len(cls.wtf_idf[ds])} entries!")
 
             # setup spacy
             # TODO can we disable some pipeline components to be faster? e.g. ner
+            logger.info(f"Loading spaCy model {conf.spacy_model}!")
             cls.spacy_nlp = spacy.load(conf.spacy_model)
 
             cls.focus_max_tokens = conf.max_tokens
@@ -49,13 +54,14 @@ class FocusPreselector(object):
             cls.focus_lemmatize = conf.lemmatize
             cls.focus_pos_tags = conf.pos_tags
 
-
             # perform warm up (first time takes about 20s)
-            cls.get_top_k_similar_terms(cls.__singleton, "warmup")
+            logger.info(f"Performing warmup...")
+            cls.find_top_k_similar_focus_terms(cls.__singleton, "warmup")
 
         return cls.__singleton
 
     def pre_process_focus(self, focus: str) -> List[str]:
+        logger.debug(f"Preprocessing focus term: {focus}")
         focus_terms = []
         for token in self.spacy_nlp(focus):
             if self.focus_remove_stopwords and token.is_stop:
@@ -78,10 +84,13 @@ class FocusPreselector(object):
             # add the full focus term
             focus_terms.append(focus)
 
-        return focus_terms[:self.focus_max_tokens]
+        focus_terms = focus_terms[:self.focus_max_tokens]
+        logger.debug(f"Preprocessed focus terms: {focus_terms}")
+        return focus_terms
 
     @logger.catch
-    def get_top_k_similar_terms(self, focus: str) -> Dict[str, float]:
+    def find_top_k_similar_focus_terms(self, focus: str) -> Dict[str, float]:
+        logger.debug(f"Finding top-{self.top_k_similar} similar focus terms for '{focus}'")
         focus_terms = self.pre_process_focus(focus)
 
         # term -> similarity as weight
@@ -98,23 +107,34 @@ class FocusPreselector(object):
         similar_terms = {k: min(v, 1.) for k, v in
                          sorted(similar_terms.items(), key=lambda i: i[1], reverse=True)[:self.max_similar]}
 
+        logger.debug(f"Found {len(similar_terms)} similar focus terms: {similar_terms}")
         return similar_terms
 
     @logger.catch
-    def retrieve_top_k_relevant_images(self, focus: str, k: int = 100, weight_by_sim: bool = False) -> Dict[str, float]:
+    def retrieve_top_k_relevant_images(self, focus: str,
+                                       dataset: str,
+                                       k: int = 100,
+                                       weight_by_sim: bool = False) -> Dict[str, float]:
+        logger.debug(f"Retrieving top-{k} relevant images in dataset {dataset} for focus term {focus}")
+        if dataset not in self.wtf_idf:
+            logger.error(f"WTF-IDF Index for dataset {dataset} not available!")
+            raise FileNotFoundError(f"WTF-IDF Index for dataset {dataset} not available!")
+
+        wtf_idf = self.wtf_idf[dataset]
+
         start = time.time()
-        similar_terms = self.get_top_k_similar_terms(focus)
+        similar_terms = self.find_top_k_similar_focus_terms(focus)
         logger.debug(f"get_top_k_similar_terms took {time.time() - start}s")
 
         # remove terms which are not in the index
         start = time.time()
-        # TODO this can be improved!
-        similar_terms = {t: s for t, s in similar_terms.items() if t in self.wtf_idf.index}
+        # TODO make this more efficient
+        similar_terms = {t: s for t, s in similar_terms.items() if t in wtf_idf.index}
         logger.debug(f"remove terms which are not in the index took {time.time() - start}s")
 
         # get the relevant entries (i.e. entries that match the similar terms)
         start = time.time()
-        entries = self.wtf_idf.loc[similar_terms.keys()]
+        entries = wtf_idf.loc[similar_terms.keys()]
         logger.debug(f"get the relevant entries took {time.time() - start}s")
 
         if weight_by_sim:

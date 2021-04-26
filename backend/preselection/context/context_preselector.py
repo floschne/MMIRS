@@ -77,14 +77,21 @@ class ContextPreselector(object):
 
         return cls.__singleton
 
-    def retrieve_top_k_relevant_images(self, context: str, k: int = 10, exact: bool = False) -> Dict[str, float]:
-        start = time.time()
-        # TODO for now we only use symmetric and wicsmmir
-        #   in later versions we want to decide this dynamically by analysing the query (embedding)
-        embs = self.symmetric_embeddings['wicsmmir']['embeddings']
-        corpus_ids = self.symmetric_embeddings['wicsmmir']['corpus_ids']
-        index = self.symmetric_indices['wicsmmir']
+    def faiss_index_available_for_dataset(self, dataset: str, symmetric: bool):
+        indices = self.symmetric_indices if symmetric else self.asymmetric_indices
+        return dataset in indices.keys()
 
+    def sentence_embeddings_available_for_dataset(self, dataset: str, symmetric: bool):
+        embs = self.symmetric_embeddings if symmetric else self.asymmetric_embeddings
+        return dataset in embs.keys()
+
+    def retrieve_top_k_relevant_images(self, context: str, k: int, dataset: str, exact: bool = False) -> Dict[
+        str, float]:
+        # TODO for now we only use symmetric
+        #   in later versions we want to decide this dynamically by analysing the query (embedding)
+        logger.debug(
+            f"Retrieving top-{k} relevant images with exact={exact} in dataset {dataset} for context {context}")
+        start = time.time()
         # compute context embedding
         context_embedding = self.sembedders['symm'].encode(context)
 
@@ -92,6 +99,12 @@ class ContextPreselector(object):
         context_embedding = context_embedding / np.linalg.norm(context_embedding)
         context_embedding = np.expand_dims(context_embedding, axis=0)
         if not exact:
+            if not self.faiss_index_available_for_dataset(dataset, symmetric=True):
+                logger.error(f"FAISS Index for dataset {dataset} not available!")
+                raise FileNotFoundError(f"FAISS Index for dataset {dataset} not available!")
+
+            index = self.symmetric_indices[dataset]
+
             # Approximate Nearest Neighbor (ANN) on FAISS INV Index (Voronoi Cells)
             # returns a matrix with distances and corpus ids.
             index.nprobe = self.faiss_nprobe
@@ -100,6 +113,13 @@ class ContextPreselector(object):
             # We extract corpus ids and scores for the first query
             hits = [{'corpus_id': cid, 'score': score} for cid, score in zip(cids[0], distances[0])]
         else:
+            if not self.sentence_embeddings_available_for_dataset(dataset, symmetric=True):
+                logger.error(f"Sentence Embeddings for dataset {dataset} not available!")
+                raise FileNotFoundError(f"Sentence Embeddings for dataset {dataset} not available!")
+
+            embs = self.symmetric_embeddings[dataset]['embeddings']
+            corpus_ids = self.symmetric_embeddings[dataset]['corpus_ids']
+
             # Approximate Nearest Neighbor (ANN) is not exact, it might miss entries with high cosine similarity / dot p
             # --> use exact search from sbert
             hits = util.semantic_search(context_embedding,
@@ -108,5 +128,5 @@ class ContextPreselector(object):
 
         hits = sorted(hits, key=lambda x: x['score'], reverse=True)
         top_k_matches = {corpus_ids[hit['corpus_id']]: hit['score'] for hit in hits[:k]}
-        logger.debug(f"Retrieving top k relevant images with exact={exact} took {time.time() - start}s")
+        logger.info(f"Retrieving top-{k} relevant images with exact={exact} took {time.time() - start}s")
         return top_k_matches

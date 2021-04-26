@@ -13,22 +13,24 @@ def ps():
 
 @pytest.fixture
 def inp():
-    ctx = "Stingrays exhibit a wide range of colors and patterns on their dorsal surface to help them camouflage with " \
-          "the sandy bottom."
-    focus = "Stingrays"
+    ctx = ["Stingrays exhibit a wide range of colors and patterns on their dorsal surface to help them camouflage with "
+           "the sandy bottom.",
+           "The dog has been selectively bred over millennia for various behaviors, sensory capabilities, and physical "
+           "attributes. Dogs are subclassified into breeds, which vary widely in shape, size and color. "]
+    focus = ["Stingrays", "dog"]
     return ctx, focus
 
 
 def test_retrieve_relevant_images_defaults(ps: PreselectionStage, inp):
     max_rel = 5000
-    ctx, foc = inp
 
     for i in range(3):
-        start = time.time()
-        relevant = ps.retrieve_relevant_images(context=ctx, focus=foc)
-        logger.debug(f"Run {i} took {time.time() - start}s")
-        assert len(relevant) != 0 and len(relevant) <= max_rel
-        logger.info(f"Found {len(relevant)} images!")
+        for c, f in inp:
+            start = time.time()
+            relevant = ps.retrieve_relevant_images(context=c, focus=f)
+            logger.info(f"Run {f}.{i} took {time.time() - start}s")
+            assert len(relevant) != 0 and len(relevant) <= max_rel
+            logger.info(f"Found {len(relevant)} images!")
 
 
 def test_retrieve_relevant_images_merge_union(ps: PreselectionStage, inp):
@@ -36,11 +38,12 @@ def test_retrieve_relevant_images_merge_union(ps: PreselectionStage, inp):
     ctx, foc = inp
 
     for i in range(3):
-        start = time.time()
-        relevant = ps.retrieve_relevant_images(context=ctx, focus=foc, merge_op=MergeOp.union)
-        logger.debug(f"Run {i} took {time.time() - start}s")
-        assert len(relevant) != 0 and len(relevant) <= max_rel
-        logger.info(f"Found {len(relevant)} images!")
+        for c, f in inp:
+            start = time.time()
+            relevant = ps.retrieve_relevant_images(context=c, focus=f, merge_op=MergeOp.UNION)
+            logger.info(f"Run {f}.{i} took {time.time() - start}s")
+            assert len(relevant) != 0 and len(relevant) <= max_rel
+            logger.info(f"Found {len(relevant)} images!")
 
 
 def test_retrieve_relevant_images_exact_context(ps: PreselectionStage, inp):
@@ -48,11 +51,12 @@ def test_retrieve_relevant_images_exact_context(ps: PreselectionStage, inp):
     ctx, foc = inp
 
     for i in range(3):
-        start = time.time()
-        relevant = ps.retrieve_relevant_images(context=ctx, focus=foc, exact_context_retrieval=True)
-        logger.debug(f"Run {i} took {time.time() - start}s")
-        assert len(relevant) != 0 and len(relevant) <= max_rel
-        logger.info(f"Found {len(relevant)} images!")
+        for c, f in inp:
+            start = time.time()
+            relevant = ps.retrieve_relevant_images(context=c, focus=f, exact_context_retrieval=True)
+            logger.info(f"Run {f}.{i} took {time.time() - start}s")
+            assert len(relevant) != 0 and len(relevant) <= max_rel
+            logger.info(f"Found {len(relevant)} images!")
 
 
 def test_retrieve_relevant_images_focus_weight_by_sim(ps: PreselectionStage, inp):
@@ -60,11 +64,12 @@ def test_retrieve_relevant_images_focus_weight_by_sim(ps: PreselectionStage, inp
     ctx, foc = inp
 
     for i in range(3):
-        start = time.time()
-        relevant = ps.retrieve_relevant_images(context=ctx, focus=foc, focus_weight_by_sim=True)
-        logger.debug(f"Run {i} took {time.time() - start}s")
-        assert len(relevant) != 0 and len(relevant) <= max_rel
-        logger.info(f"Found {len(relevant)} images!")
+        for c, f in inp:
+            start = time.time()
+            relevant = ps.retrieve_relevant_images(context=c, focus=f, focus_weight_by_sim=True)
+            logger.info(f"Run {f}.{i} took {time.time() - start}s")
+            assert len(relevant) != 0 and len(relevant) <= max_rel
+            logger.info(f"Found {len(relevant)} images!")
 
 
 def test_retrieve_relevant_images_no_defaults(ps: PreselectionStage, inp):
@@ -72,11 +77,12 @@ def test_retrieve_relevant_images_no_defaults(ps: PreselectionStage, inp):
     ctx, foc = inp
 
     for i in range(3):
-        start = time.time()
-        relevant = ps.retrieve_relevant_images(context=ctx, focus=foc,
-                                               merge_op=MergeOp.union,
-                                               focus_weight_by_sim=True,
-                                               exact_context_retrieval=True)
-        logger.debug(f"Run {i} took {time.time() - start}s")
-        assert len(relevant) != 0 and len(relevant) <= max_rel
-        logger.info(f"Found {len(relevant)} images!")
+        for c, f in inp:
+            start = time.time()
+            relevant = ps.retrieve_relevant_images(context=c, focus=f,
+                                                   merge_op=MergeOp.UNION,
+                                                   focus_weight_by_sim=True,
+                                                   exact_context_retrieval=True)
+            logger.info(f"Run {f}.{i} took {time.time() - start}s")
+            assert len(relevant) != 0 and len(relevant) <= max_rel
+            logger.info(f"Found {len(relevant)} images!")

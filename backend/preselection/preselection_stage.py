@@ -11,8 +11,8 @@ from backend.preselection import FocusPreselector
 
 @unique
 class MergeOp(str, Enum):
-    union = 'union'
-    intersection = 'intersect'
+    UNION = 'union'
+    INTERSECTION = 'intersection'
 
 
 class PreselectionStage(object):
@@ -20,25 +20,25 @@ class PreselectionStage(object):
 
     def __new__(cls, *args, **kwargs):
         if cls.__singleton is None:
-            logger.info('Instantiating Preselection Stage!')
+            logger.info('Instantiating PreselectionStage!')
             cls.__singleton = super(PreselectionStage, cls).__new__(cls)
 
             cls.__context_preselector = ContextPreselector()
             cls.__focus_preselector = FocusPreselector()
 
-            conf = OmegaConf.load('config.yaml').preselection.stage
+            cls._conf = OmegaConf.load('config.yaml').preselection.stage
 
         return cls.__singleton
 
     @staticmethod
     def __merge_relevant_images(focus: Dict[str, float],
                                 context: Dict[str, float],
-                                merge_op: MergeOp = MergeOp.intersection) -> List[str]:
+                                merge_op: MergeOp = MergeOp.INTERSECTION) -> List[str]:
         merged = {}
-        if merge_op == MergeOp.union:
+        if merge_op == MergeOp.UNION:
             merged.update(focus)
             merged.update(context)
-        if merge_op == MergeOp.intersection:
+        if merge_op == MergeOp.INTERSECTION:
             # intersect the key sets
             intersect = focus.keys() & context.keys()
             # take the max relevance score
@@ -52,21 +52,26 @@ class PreselectionStage(object):
     def retrieve_relevant_images(self,
                                  focus: str,
                                  context: str,
-                                 merge_op: MergeOp = MergeOp.intersection,
+                                 dataset: str,
+                                 merge_op: MergeOp = MergeOp.INTERSECTION,
                                  max_num_relevant: int = 5000,
                                  focus_weight_by_sim: bool = False,
                                  exact_context_retrieval: bool = False) -> List[str]:
+
+        # TODO do this in two parallel threads!
         context_relevant = self.__context_preselector.retrieve_top_k_relevant_images(context,
                                                                                      k=max_num_relevant,
+                                                                                     dataset=dataset,
                                                                                      exact=exact_context_retrieval)
         focus_relevant = self.__focus_preselector.retrieve_top_k_relevant_images(focus,
                                                                                  k=max_num_relevant,
+                                                                                 dataset=dataset,
                                                                                  weight_by_sim=focus_weight_by_sim)
 
         merged = self.__merge_relevant_images(focus_relevant, context_relevant, merge_op)
-        if merge_op == MergeOp.intersection and len(merged) < max_num_relevant // 10:
+        if merge_op == MergeOp.INTERSECTION and len(merged) < max_num_relevant // 10:
             # switch merge_op to union as fallback if (way) too less items got returned
-            merged = self.__merge_relevant_images(focus_relevant, context_relevant, MergeOp.union)
+            merged = self.__merge_relevant_images(focus_relevant, context_relevant, MergeOp.UNION)
 
         if len(merged) > max_num_relevant:
             # shuffle the merged list because otherwise we would discard the docs with the lowest scores and since
@@ -74,6 +79,7 @@ class PreselectionStage(object):
             # the focus similar docs.
             # TODO think of a way to include an equal number of context and focus relevant docs if possible.
             #  or discard context docs if more context docs are found (or vice versa for focus docs)
+            #  - just take the top k//2 from context and focus !?
             random.shuffle(merged)
             return merged[:max_num_relevant]
 

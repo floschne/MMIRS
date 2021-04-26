@@ -1,23 +1,5 @@
 api:
-  port: 8081
-retriever:
-
-  uniter:
-    n_gpu: 1
-    uniter_dir: ${env:UNITER_DATA_DIR}
-    model_config: ${env:UNITER_MODEL_CONFIG}
-    num_imgs: 1000
-    batch_size: 50
-    n_data_workers: 0
-    fp16: True
-    pin_mem: True
-
-  teran:
-    device: cpu
-    cuda_device: -1
-    model_config: configs/teran_coco_MrSw_IR_PreComp_API.yaml
-    num_data_workers: 8
-    model: pretrained_models/coco_MrSw.pth.tar
+  port: 10161
 
 image_server:
   lighttp:
@@ -48,23 +30,71 @@ preselection:
       top_k_similar: 25  # per focus token
       max_similar: 25  # total
     wtf_idf:
-      index: data/wtf_idf/wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index  # TODO generify for multiple datasets
+      wicsmmir: data/wtf_idf/wicsmmir_wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index
+      coco: data/wtf_idf/coco_wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index
     spacy_model: en_core_web_lg
 
   context:
+    use_symmetric: True # if False, do not use symmetric embeddings, indices, and models
+    use_asymmetric: False # if False, do not use asymmetric embeddings, indices, and models
     sbert:
       symmetric_model: paraphrase-distilroberta-base-v1
       asymmetric_model: msmarco-distilbert-base-v2
       max_seq_len: 200  # number of subwords in the captions before it gets truncated
       symmetric_embeddings:
         - wicsmmir: data/sembs/wicsmmir_symm_embs.pkl
+        - coco: data/sembs/coco_symm_embs.pkl
       asymmetric_embeddings:
         - wicsmmir: data/sembs/wicsmmir_asym_embs.pkl
+        - coco: data/sembs/coco_symm_embs.pkl
     faiss:
       symmetric_indices:
         - wicsmmir: data/faiss/wicsmmir_symm.faiss
+        - coco: data/faiss/coco_symm.faiss
       asymmetric_indices:
         - wicsmmir: data/faiss/wicsmmir_asym.faiss
+        - coco: data/faiss/cooc_asym.faiss
       nprobe: 250  # Number of VCs to explorer at search time (tradeoff between search accuracy and search time)
 
+fine_selection:
+  feature_pools:
+    coco:
+      teran:
+        data_root: /srv/home/7schneid/data/TERAN_fork/data/coco/pre_computed_embeddings
+        num_workers: 16
+        pre_fetch: False
+    wicsmmir:
+      teran:
+        data_root: /srv/home/7schneid/data/TERAN_fork/data/wicsmmir_v2/pre_computed_embeddings
+        num_workers: 16
+        pre_fetch: False
 
+  retrievers:
+    uniter_base:
+      retriever_type: uniter
+      n_gpu: 1
+      uniter_dir: ${env:UNITER_DATA_DIR}
+      model_config: ${env:UNITER_MODEL_CONFIG}
+      num_imgs: 1000
+      batch_size: 50
+      n_data_workers: 0
+      fp16: True
+      pin_mem: True
+
+    teran_coco:
+      retriever_type: teran
+      device: cpu # TODO
+      model: pretrained_models/coco_MrSw.pth.tar
+      model_config: configs/teran_coco_MrSw_IR_PreComp_API.yaml
+
+    # TODO multiple TERAN models
+
+
+mmirs:
+  pss:
+    merge_op: intersection
+    max_num_relevant: 5000
+    focus_weight_by_sim: False
+    exact_context_retrieval: False
+  fss:
+    pool_name: teran_demo_coco # TODO
