@@ -85,8 +85,25 @@ class ContextPreselector(object):
         embs = self.symmetric_embeddings if symmetric else self.asymmetric_embeddings
         return dataset in embs.keys()
 
-    def retrieve_top_k_relevant_images(self, context: str, k: int, dataset: str, exact: bool = False) -> Dict[
-        str, float]:
+    def retrieve_top_k_relevant_images(self,
+                                       context: str,
+                                       k: int,
+                                       dataset: str,
+                                       exact: bool = False) -> Dict[str, float]:
+        """
+        Retrives the top-k relevant images by comparing the context with the captions of the specified dataset
+        :param context: the context (of a RetrievalRequest) a sentence(s).
+        :type context:
+        :param k: specifies how many relevant images will be returned
+        :type k:
+        :param dataset: the context will be compared to the dataset specified by this parameter
+        :type dataset:
+        :param exact: if True, the context is compared to every caption in the dataset. If False an approximated search
+        is done.
+        :type exact:
+        :return: a dictionary containing the top-k relevant images. Keys are image ids. Values are relevance scores.
+        :rtype:
+        """
         # TODO for now we only use symmetric
         #   in later versions we want to decide this dynamically by analysing the query (embedding)
         logger.debug(
@@ -118,7 +135,6 @@ class ContextPreselector(object):
                 raise FileNotFoundError(f"Sentence Embeddings for dataset {dataset} not available!")
 
             embs = self.symmetric_embeddings[dataset]['embeddings']
-            corpus_ids = self.symmetric_embeddings[dataset]['corpus_ids']
 
             # Approximate Nearest Neighbor (ANN) is not exact, it might miss entries with high cosine similarity / dot p
             # --> use exact search from sbert
@@ -126,7 +142,10 @@ class ContextPreselector(object):
                                         embs,
                                         top_k=k)[0]
 
+        # sort by score
         hits = sorted(hits, key=lambda x: x['score'], reverse=True)
-        top_k_matches = {corpus_ids[hit['corpus_id']]: hit['score'] for hit in hits[:k]}
+        # look up the document ids of the hits (the hits contain indices but we need the document id)
+        corpus_ids = self.symmetric_embeddings[dataset]['corpus_ids']
+        top_k_matches = {str(corpus_ids[hit['corpus_id']]): hit['score'] for hit in hits[:k]}
         logger.info(f"Retrieving top-{k} relevant images with exact={exact} took {time.time() - start}s")
         return top_k_matches
