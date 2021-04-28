@@ -10,6 +10,7 @@ from omegaconf import OmegaConf
 from pymagnitude import Magnitude
 
 from backend.preselection import VisualVocab
+from backend.preselection.focus.wtf_idf import WTFIDF
 
 
 @numba.jit
@@ -34,14 +35,13 @@ class FocusPreselector(object):
             cls.top_k_similar = conf.magnitude.top_k_similar
             cls.max_similar = conf.magnitude.max_similar
 
-            # load wtf-idf indices and set multi index
+            # load wtf-idf indices
             logger.info(f"Loading WTF-IDF Indices!")
             cls.wtf_idf = {}
             for ds in conf.wtf_idf.keys():
-                df = pd.read_feather(conf.wtf_idf[ds])
-                mi = pd.MultiIndex.from_frame(df[['term', 'doc']])
-                cls.wtf_idf[ds] = df[['wtf_idf']].set_index(mi)
-                logger.info(f"Loaded WTF-IDF Index for {ds} with {len(cls.wtf_idf[ds])} entries!")
+                cls.wtf_idf[ds] = WTFIDF(file=conf.wtf_idf[ds].file,
+                                         dataset=ds,
+                                         doc_id_prefix=conf.wtf_idf[ds].doc_id_prefix)
 
             # setup spacy
             # TODO can we disable some pipeline components to be faster? e.g. ner
@@ -129,12 +129,12 @@ class FocusPreselector(object):
         # remove terms which are not in the index
         start = time.time()
         # TODO make this more efficient
-        similar_terms = {t: s for t, s in similar_terms.items() if t in wtf_idf.index}
+        similar_terms = {t: s for t, s in similar_terms.items() if t in wtf_idf.df.index}
         logger.debug(f"remove terms which are not in the index took {time.time() - start}s")
 
         # get the relevant entries (i.e. entries that match the similar terms)
         start = time.time()
-        entries = wtf_idf.loc[similar_terms.keys()]
+        entries = wtf_idf.df.loc[similar_terms.keys()]
         logger.debug(f"get the relevant entries took {time.time() - start}s")
 
         if weight_by_sim:
@@ -160,7 +160,10 @@ class FocusPreselector(object):
         entries = entries.sort_values(by='wtf_idf', ascending=False)
         logger.debug(f"sort descending took {time.time() - start}s")
 
-        return entries[:k].to_dict()['wtf_idf']
+        # return dict
+        entries = entries[:k].to_dict()['wtf_idf']
+
+        return entries
 
     # naive implementation way to slow (86s for a three token focus word)
     # @logger.catch(reraise=True)

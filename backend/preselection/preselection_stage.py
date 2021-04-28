@@ -1,4 +1,5 @@
 import random
+import time
 from enum import Enum, unique
 from typing import Dict, List
 
@@ -33,45 +34,22 @@ class PreselectionStage(object):
     @staticmethod
     def __merge_relevant_images(focus: Dict[str, float],
                                 context: Dict[str, float],
+                                max_num_relevant: int,
                                 merge_op: MergeOp = MergeOp.INTERSECTION) -> List[str]:
-        merged = {}
+        logger.debug(f"Merging with {merge_op}")
+
         if merge_op == MergeOp.UNION:
-            merged.update(focus)
-            merged.update(context)
-        if merge_op == MergeOp.INTERSECTION:
+            merged = list(focus.keys()) + list(context.keys())
+        elif merge_op == MergeOp.INTERSECTION:
             # intersect the key sets
-            intersect = focus.keys() & context.keys()
-            # take the max relevance score
-            # actually this makes not too much sense because focus scores are wtf_idf and context scores are cosine sims
-            # but we'll discard the scores anyways later
-            merged = {k: max(focus[k], context[k]) for k in intersect}
+            merged = list(focus.keys() & context.keys())
 
-        # merged = {k: v for k, v in sorted(merged.items(), key=lambda i: i[1], reverse=True)}
-        return list(merged.keys())
-
-    def retrieve_relevant_images(self,
-                                 focus: str,
-                                 context: str,
-                                 dataset: str,
-                                 merge_op: MergeOp = MergeOp.INTERSECTION,
-                                 max_num_relevant: int = 5000,
-                                 focus_weight_by_sim: bool = False,
-                                 exact_context_retrieval: bool = False) -> List[str]:
-
-        # TODO do this in two parallel threads!
-        context_relevant = self.__context_preselector.retrieve_top_k_relevant_images(context,
-                                                                                     k=max_num_relevant,
-                                                                                     dataset=dataset,
-                                                                                     exact=exact_context_retrieval)
-        focus_relevant = self.__focus_preselector.retrieve_top_k_relevant_images(focus,
-                                                                                 k=max_num_relevant,
-                                                                                 dataset=dataset,
-                                                                                 weight_by_sim=focus_weight_by_sim)
-
-        merged = self.__merge_relevant_images(focus_relevant, context_relevant, merge_op)
-        if merge_op == MergeOp.INTERSECTION and len(merged) < max_num_relevant // 10:
-            # switch merge_op to union as fallback if (way) too less items got returned
-            merged = self.__merge_relevant_images(focus_relevant, context_relevant, MergeOp.UNION)
+            # union as fallback if (way) too less items got returned
+            if len(merged) < max_num_relevant // 10:
+                logger.debug(f"Merging with UNION as fallback. Intersection size: {len(merged)}")
+                merged = list(focus.keys()) + list(context.keys())
+        else:
+            raise NotImplementedError(f"Merge Operation {merge_op} not implemented!")
 
         if len(merged) > max_num_relevant:
             # shuffle the merged list because otherwise we would discard the docs with the lowest scores and since
@@ -82,5 +60,40 @@ class PreselectionStage(object):
             #  - just take the top k//2 from context and focus !?
             random.shuffle(merged)
             return merged[:max_num_relevant]
+
+        return merged
+
+    def retrieve_relevant_images(self,
+                                 focus: str,
+                                 context: str,
+                                 dataset: str,
+                                 merge_op: MergeOp = MergeOp.INTERSECTION,
+                                 max_num_focus_relevant: int = 5000,
+                                 max_num_context_relevant: int = 5000,
+                                 max_num_relevant: int = 5000,
+                                 focus_weight_by_sim: bool = False,
+                                 exact_context_retrieval: bool = False) -> List[str]:
+
+        # TODO do this in two parallel threads!
+        start = time.time()
+        context_relevant = self.__context_preselector.retrieve_top_k_relevant_images(context,
+                                                                                     k=max_num_context_relevant,
+                                                                                     dataset=dataset,
+                                                                                     exact=exact_context_retrieval)
+        logger.info(f"ContextPreselector took: {time.time() - start}s")
+
+        start = time.time()
+        focus_relevant = self.__focus_preselector.retrieve_top_k_relevant_images(focus,
+                                                                                 k=max_num_focus_relevant,
+                                                                                 dataset=dataset,
+                                                                                 weight_by_sim=focus_weight_by_sim)
+        logger.info(f"FocusPreselector took: {time.time() - start}s")
+
+        start = time.time()
+        merged = self.__merge_relevant_images(focus=focus_relevant,
+                                              context=context_relevant,
+                                              max_num_relevant=max_num_relevant,
+                                              merge_op=merge_op)
+        logger.info(f"Merging took: {time.time() - start}s")
 
         return merged
