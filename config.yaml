@@ -8,8 +8,14 @@ image_server:
     port: 8082
     context_path: /
     datasources:
-      - uniter: /flickr30k/
-      - teran: /coco14/val2014/
+      coco:
+       images_root: /raid/datasets/coco/images
+       image_prefix: COCO_000000
+       image_suffix: .png
+      wicsmmir:
+        images_root: /raid/datasets/wicsmmir/images
+        image_prefix: wikicaps_
+        image_suffix: .png
 
 preselection:
   focus:
@@ -30,8 +36,12 @@ preselection:
       top_k_similar: 25  # per focus token
       max_similar: 25  # total
     wtf_idf:
-      wicsmmir: data/wtf_idf/wicsmmir_wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index
-      coco: data/wtf_idf/coco_wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index
+      wicsmmir:
+        file: data/wtf_idf/wicsmmir_wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index
+        doc_id_prefix: wikicaps_
+      coco:
+        file: data/wtf_idf/coco_wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index
+        doc_id_prefix: COCO_[trainval]{3,5}2014_000000
     spacy_model: en_core_web_lg
 
   context:
@@ -54,18 +64,20 @@ preselection:
       asymmetric_indices:
         - wicsmmir: data/faiss/wicsmmir_asym.faiss
         - coco: data/faiss/cooc_asym.faiss
-      nprobe: 250  # Number of VCs to explorer at search time (tradeoff between search accuracy and search time)
+      nprobe: 350  # Number of VCs to explorer at search time (tradeoff between search accuracy and search time)
 
 fine_selection:
   feature_pools:
     coco:
       teran:
-        data_root: /srv/home/7schneid/data/TERAN_fork/data/coco/pre_computed_embeddings
+        data_root: /raid/datasets/coco/pre_computed_embeddings
+        fn_prefix: COCO_000000
         num_workers: 16
         pre_fetch: False
     wicsmmir:
       teran:
-        data_root: /srv/home/7schneid/data/TERAN_fork/data/wicsmmir_v2/pre_computed_embeddings
+        data_root: /raid/datasets/wicsmmir/v2/pre_computed_embeddings
+        fn_prefix: ''
         num_workers: 16
         pre_fetch: False
 
@@ -83,8 +95,15 @@ fine_selection:
 
     teran_coco:
       retriever_type: teran
-      device: cpu # TODO
+      device: cuda
       model: pretrained_models/coco_MrSw.pth.tar
+      model_config: configs/teran_coco_MrSw_IR_PreComp_API.yaml
+
+
+    teran_wicsmmir:
+      retriever_type: teran
+      device: cuda
+      model: pretrained_models/wicsmmir_v2_MrSw.pth.tar
       model_config: configs/teran_coco_MrSw_IR_PreComp_API.yaml
 
     # TODO multiple TERAN models
@@ -93,7 +112,9 @@ fine_selection:
 mmirs:
   pss:
     merge_op: intersection
-    max_num_relevant: 5000
+    max_num_context_relevant: 5000
+    max_num_focus_relevant: 5000
+    max_num_relevant: 10000
     focus_weight_by_sim: False
     exact_context_retrieval: False
   fss:
