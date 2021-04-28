@@ -76,7 +76,7 @@ def build_wtf_idf_index(docs: List[ImageMetadata], dst: Path) -> None:
     index.set_index(['term'])
 
     # persist
-    index.to_feather(dst)
+    index.to_feather(str(dst))
     logger.info(f"Successfully persisted WTF-IDF Index at {dst}")
 
 

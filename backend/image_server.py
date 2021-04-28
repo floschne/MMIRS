@@ -1,7 +1,23 @@
+import os
 from abc import abstractmethod
 
 from loguru import logger
 from omegaconf import OmegaConf
+
+
+class ImageDatasource(object):
+    def __init__(self, dataset: str, images_root: str, image_prefix: str, image_suffix: str):
+        self.dataset = dataset
+        self.images_root = images_root
+        self.image_prefix = image_prefix
+        self.image_suffix = image_suffix
+
+        if not os.path.lexists(images_root) or not os.path.isdir(images_root):
+            logger.error(f"Cannot read Image Datasource at {images_root}!")
+            raise FileNotFoundError(f"Cannot read Image Datasource at {images_root}!")
+
+    def get_image_file_name(self, img_id: str):
+        return self.image_prefix + img_id + self.image_suffix
 
 
 class ImageServer(object):
@@ -10,8 +26,11 @@ class ImageServer(object):
         self._conf = OmegaConf.load("config.yaml").image_server[image_srv_name]
         # FIXME very strange bug: can't create the dict via list or dict comprehension
         self.datasources = {}
-        for i in range(len(self._conf.datasources)):
-            self.datasources.update(self._conf.datasources[i])
+        for ds in self._conf.datasources.keys():
+            self.datasources[ds] = ImageDatasource(dataset=str(ds),
+                                                   images_root=self._conf.datasources[ds].images_root,
+                                                   image_prefix=self._conf.datasources[ds].image_prefix,
+                                                   image_suffix=self._conf.datasources[ds].image_suffix)
         logger.info(f"{image_srv_name} Image Server has datasources: {self.datasources}")
 
     @abstractmethod

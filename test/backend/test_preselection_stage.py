@@ -16,7 +16,7 @@ def inp():
     ctx = ["Stingrays exhibit a wide range of colors and patterns on their dorsal surface to help them camouflage with "
            "the sandy bottom.",
            "The dog has been selectively bred over millennia for various behaviors, sensory capabilities, and physical "
-           "attributes. Dogs are subclassified into breeds, which vary widely in shape, size and color. "]
+           "attributes. Dogs are subclassified into breeds, which vary widely in shape, size and color."]
     focus = ["Stingrays", "dog"]
     return ctx, focus
 
