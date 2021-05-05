@@ -58,7 +58,7 @@ def generate_sentence_embeddings(dataset_name: str,
                                  symm_model: str,
                                  asym_model: str,
                                  max_seq_len: int) -> Dict[str, Dict[str, Any]]:
-    corpus, corpus_ids = load_corpus(dataset_path)
+    corpus, corpus_ids = load_corpus(dataset_path, dataset_name)
     results = {'symmetric': None, 'asymmetric': None}
 
     op = Path(out_path)

@@ -9,9 +9,9 @@ image_server:
     context_path: /
     datasources:
       coco:
-       images_root: /raid/datasets/coco/images
-       image_prefix: COCO_000000
-       image_suffix: .png
+        images_root: /raid/datasets/coco/images
+        image_prefix: COCO_000000
+        image_suffix: .png
       wicsmmir:
         images_root: /raid/datasets/wicsmmir/images
         image_prefix: wikicaps_
@@ -72,13 +72,19 @@ fine_selection:
       teran:
         data_root: /raid/datasets/coco/pre_computed_embeddings
         fn_prefix: COCO_000000
-        num_workers: 16
+        num_workers: 32
         pre_fetch: False
     wicsmmir:
       teran:
-        data_root: /raid/datasets/wicsmmir/v2/pre_computed_embeddings
+        data_root: /raid/7schneid/datasets/wicsmmir/v2/pre_computed_embeddings
         fn_prefix: ''
-        num_workers: 16
+        num_workers: 32
+        pre_fetch: False
+    f30k:
+      teran:
+        data_root: /raid/7schneid/datasets/f30k/pre_computed_embeddings
+        fn_prefix: ''
+        num_workers: 32
         pre_fetch: False
 
   retrievers:
@@ -86,7 +92,7 @@ fine_selection:
       retriever_type: uniter
       n_gpu: 1
       uniter_dir: ${env:UNITER_DATA_DIR}
-      model_config: ${env:UNITER_MODEL_CONFIG}
+      model_config: /raid/7schneid/MMIR/models/uniter/config/uniter-base.json
       num_imgs: 1000
       batch_size: 50
       n_data_workers: 0
@@ -104,9 +110,13 @@ fine_selection:
       retriever_type: teran
       device: cuda
       model: pretrained_models/wicsmmir_v2_MrSw.pth.tar
-      model_config: configs/teran_coco_MrSw_IR_PreComp_API.yaml
+      model_config: configs/teran_wicsmmir_v2_MrSw_IR.yaml
 
-    # TODO multiple TERAN models
+    teran_f30k:
+      retriever_type: teran
+      device: cuda
+      model: pretrained_models/f30k_MrSw.pth.tar
+      model_config: configs/teran_f30k_MrSw_IR.yaml
 
 
 mmirs:

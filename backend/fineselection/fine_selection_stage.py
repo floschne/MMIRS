@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from loguru import logger
 
@@ -25,7 +25,7 @@ class FineSelectionStage(object):
         return cls.__singleton
 
     def find_top_k_images(self,
-                          focus: str,
+                          focus: Optional[str],  # TODO what should happen if focus is None further down
                           context: str,
                           top_k: int,
                           retriever_name: str,
@@ -42,5 +42,5 @@ class FineSelectionStage(object):
 
         # do the retrieval
         top_k_image_ids = retriever.find_top_k_images(focus, context, top_k, iss)
-        
+
         return top_k_image_ids

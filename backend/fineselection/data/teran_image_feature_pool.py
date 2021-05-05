@@ -1,5 +1,5 @@
 import sys
-from typing import List
+from typing import List, Optional
 
 from backend.fineselection.data import ImageFeaturePool, TeranISS
 from backend.fineselection.retriever.retriever import RetrieverType
@@ -35,13 +35,18 @@ class TeranImageFeaturePool(ImageFeaturePool):
     def load_data_into_memory(self):
         self.data.fetch_img_embs()
 
-    def get_image_search_space(self, img_ids: List[str]) -> TeranISS:
-        if self.source_dataset == 'coco':
-            # TODO fix this elsewhere (preferably in the Sentence Embedding Structure.
-            #  There the leading 0 get removed because the id's are stored as integers)
-            img_ids = [TeranImageFeaturePool.fill_leading_coco_zeros(img_id) for img_id in img_ids]
-            
-        subset = self.data.get_subset(image_ids=img_ids, pre_fetch_in_memory=True)
+    def get_image_search_space(self, img_ids: Optional[List[str]]) -> TeranISS:
+        if img_ids is None or len(img_ids) == 0:
+            # TODO this might be just to much for most of the servers...
+            self.load_data_into_memory()
+            subset = self.data
+        else:
+            if self.source_dataset == 'coco':
+                # TODO fix this elsewhere (preferably in the Sentence Embedding Structure.
+                #  There the leading 0 get removed because the id's are stored as integers)
+                img_ids = [TeranImageFeaturePool.fill_leading_coco_zeros(img_id) for img_id in img_ids]
+
+            subset = self.data.get_subset(image_ids=img_ids, pre_fetch_in_memory=True)
         return TeranISS(images=subset)
 
     @staticmethod

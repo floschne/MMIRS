@@ -1,6 +1,6 @@
 import os
 from abc import abstractmethod
-from typing import List
+from typing import List, Optional
 
 from loguru import logger
 
@@ -47,5 +47,5 @@ class ImageFeaturePool(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_image_search_space(self, img_ids: List[str]) -> ImageSearchSpace:
+    def get_image_search_space(self, img_ids: Optional[List[str]]) -> ImageSearchSpace:
         raise NotImplementedError()
