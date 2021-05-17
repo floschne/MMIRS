@@ -138,5 +138,3 @@ mmirs:
     max_num_relevant: 10000
     focus_weight_by_sim: False
     exact_context_retrieval: False
-  fss:
-    pool_name: teran_demo_coco # TODO

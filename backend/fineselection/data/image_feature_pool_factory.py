@@ -1,10 +1,10 @@
 from typing import Tuple, Set
 
 from loguru import logger
-from omegaconf import OmegaConf
 
 from backend.fineselection.data import TeranImageFeaturePool, ImageFeaturePool
 from backend.fineselection.retriever.retriever import RetrieverType
+from config import conf
 
 
 class ImageFeaturePoolFactory(object):
@@ -15,7 +15,7 @@ class ImageFeaturePoolFactory(object):
             logger.info("Instantiating ImagePoolFactory")
             cls.__singleton = super(ImageFeaturePoolFactory, cls).__new__(cls)
 
-            cls._conf = OmegaConf.load("config.yaml").fine_selection.feature_pools
+            cls._conf = conf.fine_selection.feature_pools
 
             cls.available_pools = {(source_dataset, retriever_type) for source_dataset in cls._conf.keys() for
                                    retriever_type in

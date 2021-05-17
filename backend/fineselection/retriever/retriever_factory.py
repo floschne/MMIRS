@@ -1,7 +1,7 @@
 from typing import List
 
 from loguru import logger
-from omegaconf import OmegaConf
+from config import conf
 
 from backend.fineselection.retriever import Retriever, TeranRetriever, UniterRetriever
 
@@ -14,7 +14,7 @@ class RetrieverFactory(object):
             logger.info("Instantiating RetrieverFactory")
             cls.__singleton = super(RetrieverFactory, cls).__new__(cls)
 
-            cls._conf = OmegaConf.load("config.yaml").fine_selection.retrievers
+            cls._conf = conf.fine_selection.retrievers
 
             cls.available_retrievers = cls._conf.keys()
             cls.retriever_cache = {}

@@ -12,7 +12,7 @@ UNITER_PATH = 'models/uniter'
 sys.path.append(UNITER_PATH)
 
 # noinspection PyUnresolvedReferences
-import image_retrieval
+# import image_retrieval
 
 
 class UniterRetriever(Retriever):

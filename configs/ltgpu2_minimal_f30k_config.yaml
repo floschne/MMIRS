@@ -1,0 +1,139 @@
+api:
+  port: 8081
+
+image_server:
+  lighttp:
+    https: false
+    host: localhost
+    port: 8082
+    context_path: /
+    datasources:
+#      coco:
+#        images_root: /raid/datasets/coco/images
+#        image_prefix: COCO_000000
+#        image_suffix: .png
+#      wicsmmir:
+#        images_root: /raid/datasets/wicsmmir/images
+#        image_prefix: wikicaps_
+#        image_suffix: .png
+      f30k:
+        images_root: /raid/datasets/f30k/images
+        image_prefix: ''
+        image_suffix: .jpg
+
+preselection:
+  focus:
+    max_tokens: 3  # maximum number of space-separated tokens in the focus word. E.g. "small green bird"
+    remove_stopwords: True
+    uncased: True
+    lemmatize: True
+    pos_tags:
+      - NOUN
+      - PROPN
+      - ADJ
+      - VERB
+    vocab:
+      objs_file: data/vocab/objects_vocab.txt
+      attrs_file: data/vocab/attributes_vocab.txt
+    magnitude:
+      embeddings: data/magnitude/crawl-300d-2M.magnitude
+      top_k_similar: 25  # per focus token
+      max_similar: 25  # total
+    wtf_idf:
+#      wicsmmir:
+#        file: data/wtf_idf/wicsmmir_wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index
+#        doc_id_prefix: wikicaps_
+#      coco:
+#        file: data/wtf_idf/coco_wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index
+#        doc_id_prefix: COCO_[trainval]{3,5}2014_000000
+      f30k:
+        file: data/wtf_idf/f30k_wtf_idf_octh_0.20_acth_0.15_alpha_0.95.index
+        doc_id_prefix: ''
+    spacy_model: en_core_web_lg
+
+  context:
+    use_symmetric: True # if False, do not use symmetric embeddings, indices, and models
+    use_asymmetric: False # if False, do not use asymmetric embeddings, indices, and models
+    sbert:
+      symmetric_model: paraphrase-distilroberta-base-v1
+      asymmetric_model: msmarco-distilbert-base-v2
+      max_seq_len: 200  # number of subwords in the captions before it gets truncated
+      symmetric_embeddings:
+#        - wicsmmir: data/sembs/wicsmmir_symm_embs.pkl
+#        - coco: data/sembs/coco_symm_embs.pkl
+        - f30k: data/sembs/f30k_symm_embs.pkl
+      asymmetric_embeddings:
+#        - wicsmmir: data/sembs/wicsmmir_asym_embs.pkl
+#        - coco: data/sembs/coco_asymm_embs.pkl
+        - f30k: data/sembs/f30k_asymm_embs.pkl
+    faiss:
+      symmetric_indices:
+#        - wicsmmir: data/faiss/wicsmmir_symm.faiss
+#        - coco: data/faiss/coco_symm.faiss
+        - f30k: data/faiss/f30k_symm.faiss
+      asymmetric_indices:
+#        - wicsmmir: data/faiss/wicsmmir_asym.faiss
+#        - coco: data/faiss/cooc_asym.faiss
+        - f30k: data/faiss/f30k_asymm.faiss
+      nprobe: 350  # Number of VCs to explorer at search time (tradeoff between search accuracy and search time)
+
+fine_selection:
+  feature_pools:
+#    coco:
+#      teran:
+#        data_root: /raid/coco/pre_computed_embeddings
+#        fn_prefix: COCO_000000
+#        num_workers: 32
+#        pre_fetch: False
+#    wicsmmir:
+#      teran:
+#        data_root: /raid/datasets/wicsmmir/v2/pre_computed_embeddings
+#        fn_prefix: ''
+#        num_workers: 32
+#        pre_fetch: False
+    f30k:
+      teran:
+        data_root: /raid/datasets/f30k/pre_computed_embeddings
+        fn_prefix: ''
+        num_workers: 16
+        pre_fetch: False
+
+  retrievers:
+#    uniter_base:
+#      retriever_type: uniter
+#      n_gpu: 1
+#      uniter_dir: ${env:UNITER_DATA_DIR}
+#      model_config: /raid/7schneid/MMIR/models/uniter/config/uniter-base.json
+#      num_imgs: 1000
+#      batch_size: 50
+#      n_data_workers: 0
+#      fp16: True
+#      pin_mem: True
+
+#    teran_coco:
+#      retriever_type: teran
+#      device: cuda
+#      model: pretrained_models/coco_MrSw.pth.tar
+#      model_config: configs/teran_coco_MrSw_IR_PreComp_API.yaml
+
+#    teran_wicsmmir:
+#      retriever_type: teran
+#      device: cuda
+#      model: pretrained_models/wicsmmir_v2_MrSw.pth.tar
+#      model_config: configs/teran_wicsmmir_v2_MrSw_IR.yaml
+
+    teran_f30k:
+      retriever_type: teran
+      device: cuda
+      model: pretrained_models/f30k_MrSw.pth.tar
+      model_config: configs/teran_f30k_MrSw_IR.yaml
+
+
+mmirs:
+  pss:
+    merge_op: intersection
+    max_num_context_relevant: 5000
+    max_num_focus_relevant: 5000
+    max_num_relevant: 10000
+    focus_weight_by_sim: False
+    exact_context_retrieval: False

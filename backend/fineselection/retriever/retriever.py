@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import List, Union
 
 from loguru import logger
-from omegaconf import OmegaConf
 
 from backend.fineselection.data import ImageSearchSpace
+from config import conf
 
 
 @unique
@@ -21,10 +21,9 @@ class Retriever(object):
         self.retriever_type = retriever_type
         self.retriever_name = retriever_name
 
-        conf = OmegaConf.load("config.yaml").fine_selection.retrievers[retriever_name]
-        assert conf is not None, \
+        self._conf = conf.fine_selection.retrievers[retriever_name]
+        assert self._conf is not None, \
             f"Cannot find config for Retriever with name {retriever_name}!"
-        self._conf = conf
 
     @abstractmethod
     def find_top_k_images(self, focus: str, context: str, top_k: int, iss: ImageSearchSpace) -> List[Union[Path, str]]:

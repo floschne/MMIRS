@@ -4,10 +4,10 @@ from enum import Enum, unique
 from typing import Dict, List
 
 from loguru import logger
-from omegaconf import OmegaConf
 
 from backend.preselection import ContextPreselector
 from backend.preselection import FocusPreselector
+from config import conf
 
 
 @unique
@@ -27,7 +27,7 @@ class PreselectionStage(object):
             cls.__context_preselector = ContextPreselector()
             cls.__focus_preselector = FocusPreselector()
 
-            cls._conf = OmegaConf.load('config.yaml').preselection.stage
+            cls._conf = conf.preselection.stage
 
         return cls.__singleton
 

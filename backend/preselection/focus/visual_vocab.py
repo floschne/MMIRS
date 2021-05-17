@@ -1,5 +1,6 @@
 from loguru import logger
-from omegaconf import OmegaConf
+
+from config import conf
 
 
 class VisualVocab(object):
@@ -10,16 +11,16 @@ class VisualVocab(object):
             logger.info(f"Instantiating Visual Vocabulary ...")
             cls.__singleton = super(VisualVocab, cls).__new__(cls)
 
-            conf = OmegaConf.load('config.yaml').preselection.focus.vocab
+            vocab_conf = conf.preselection.focus.vocab
             # Load object categories
             cls.objs_vocab = []
-            with open(conf.objs_file) as f:
+            with open(vocab_conf.objs_file) as f:
                 for obj in f.readlines():
                     cls.objs_vocab.append(obj.split(',')[0].lower().strip())
 
             # Load attributes
             cls.attrs_vocab = []
-            with open(conf.attrs_file) as f:
+            with open(vocab_conf.attrs_file) as f:
                 for att in f.readlines():
                     cls.attrs_vocab.append(att.split(',')[0].lower().strip())
             logger.info(

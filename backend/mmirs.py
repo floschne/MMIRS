@@ -1,13 +1,13 @@
 from typing import List, Tuple, Set
 
 from loguru import logger
-from omegaconf import OmegaConf
 
 from backend import LighttpImgServer
 from backend.fineselection import FineSelectionStage
 from backend.fineselection.data import ImageFeaturePoolFactory
 from backend.fineselection.retriever import RetrieverFactory
 from backend.preselection import PreselectionStage
+from config import conf
 
 
 class MMIRS(object):
@@ -18,7 +18,7 @@ class MMIRS(object):
             logger.info('Instantiating MMIRS!')
             cls.__singleton = super(MMIRS, cls).__new__(cls)
 
-            cls._conf = OmegaConf.load("config.yaml").mmirs
+            cls._conf = conf.mmirs
 
             cls.pss = PreselectionStage()
             cls.fss = FineSelectionStage()

@@ -2,7 +2,8 @@ import os
 from abc import abstractmethod
 
 from loguru import logger
-from omegaconf import OmegaConf
+
+from config import conf
 
 
 class ImageDatasource(object):
@@ -23,7 +24,7 @@ class ImageDatasource(object):
 class ImageServer(object):
     def __init__(self, image_srv_name: str):
         logger.info(f"Instantiating {image_srv_name} Image Server...")
-        self._conf = OmegaConf.load("config.yaml").image_server[image_srv_name]
+        self._conf = conf.image_server[image_srv_name]
         # FIXME very strange bug: can't create the dict via list or dict comprehension
         self.datasources = {}
         for ds in self._conf.datasources.keys():

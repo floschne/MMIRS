@@ -6,11 +6,11 @@ import numpy as np
 import pandas as pd
 import spacy
 from loguru import logger
-from omegaconf import OmegaConf
 from pymagnitude import Magnitude
 
 from backend.preselection import VisualVocab
 from backend.preselection.focus.wtf_idf import WTFIDF
+from config import conf
 
 
 @numba.jit
@@ -27,32 +27,32 @@ class FocusPreselector(object):
             cls.__singleton = super(FocusPreselector, cls).__new__(cls)
 
             cls.vocab = VisualVocab()
-            conf = OmegaConf.load('config.yaml').preselection.focus
+            pssf_conf = conf.preselection.focus
 
             # load magnitude
-            logger.info(f"Loading Magnitude Embeddings {conf.magnitude.embeddings}!")
-            cls.magnitude = Magnitude(conf.magnitude.embeddings)
-            cls.top_k_similar = conf.magnitude.top_k_similar
-            cls.max_similar = conf.magnitude.max_similar
+            logger.info(f"Loading Magnitude Embeddings {pssf_conf.magnitude.embeddings}!")
+            cls.magnitude = Magnitude(pssf_conf.magnitude.embeddings)
+            cls.top_k_similar = pssf_conf.magnitude.top_k_similar
+            cls.max_similar = pssf_conf.magnitude.max_similar
 
             # load wtf-idf indices
             logger.info(f"Loading WTF-IDF Indices!")
             cls.wtf_idf = {}
-            for ds in conf.wtf_idf.keys():
-                cls.wtf_idf[ds] = WTFIDF(file=conf.wtf_idf[ds].file,
+            for ds in pssf_conf.wtf_idf.keys():
+                cls.wtf_idf[ds] = WTFIDF(file=pssf_conf.wtf_idf[ds].file,
                                          dataset=ds,
-                                         doc_id_prefix=conf.wtf_idf[ds].doc_id_prefix)
+                                         doc_id_prefix=pssf_conf.wtf_idf[ds].doc_id_prefix)
 
             # setup spacy
             # TODO can we disable some pipeline components to be faster? e.g. ner
-            logger.info(f"Loading spaCy model {conf.spacy_model}!")
-            cls.spacy_nlp = spacy.load(conf.spacy_model)
+            logger.info(f"Loading spaCy model {pssf_conf.spacy_model}!")
+            cls.spacy_nlp = spacy.load(pssf_conf.spacy_model)
 
-            cls.focus_max_tokens = conf.max_tokens
-            cls.focus_remove_stopwords = conf.remove_stopwords
-            cls.focus_uncased = conf.uncased
-            cls.focus_lemmatize = conf.lemmatize
-            cls.focus_pos_tags = conf.pos_tags
+            cls.focus_max_tokens = pssf_conf.max_tokens
+            cls.focus_remove_stopwords = pssf_conf.remove_stopwords
+            cls.focus_uncased = pssf_conf.uncased
+            cls.focus_lemmatize = pssf_conf.lemmatize
+            cls.focus_pos_tags = pssf_conf.pos_tags
 
             # perform warm up (first time takes about 20s)
             logger.info(f"Performing warmup...")

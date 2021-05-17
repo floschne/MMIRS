@@ -6,8 +6,9 @@ from typing import Dict, Any
 import faiss
 import numpy as np
 from loguru import logger
-from omegaconf import OmegaConf
 from sentence_transformers import util, SentenceTransformer
+
+from config import conf
 
 
 def verify_embedding_structure(emb_struct: Dict[str, Any]) -> bool:
@@ -34,45 +35,47 @@ class ContextPreselector(object):
             logger.info('Instantiating Context Preselector!')
             cls.__singleton = super(ContextPreselector, cls).__new__(cls)
 
-            conf = OmegaConf.load('config.yaml').preselection.context
+            pssc_conf = conf.preselection.context
 
             # setup sentence transformers (sbert)
-            cls.symmetric_model = conf.sbert.symmetric_model
-            cls.asymmetric_model = conf.sbert.asymmetric_model
-            cls.max_seq_len = conf.sbert.max_seq_len
+            cls.symmetric_model = pssc_conf.sbert.symmetric_model
+            cls.asymmetric_model = pssc_conf.sbert.asymmetric_model
+            cls.max_seq_len = pssc_conf.sbert.max_seq_len
 
-            if not conf.use_symmetric and not conf.use_asymmetric:
+            if not pssc_conf.use_symmetric and not pssc_conf.use_asymmetric:
                 logger.error("Both, use_symmetric and use_asymmetric are set to False!")
                 SystemError("Both, use_symmetric and use_asymmetric are set to False!")
 
             logger.info("Loading SentenceEmbeddings into Memory...")
-            if conf.use_symmetric:
+            if pssc_conf.use_symmetric:
                 cls.symmetric_embeddings = {
-                    k: load_sentence_embeddings(Path(v)) for d in conf.sbert.symmetric_embeddings for k, v in d.items()
+                    k: load_sentence_embeddings(Path(v)) for d in pssc_conf.sbert.symmetric_embeddings for k, v in
+                    d.items()
                 }
-            if conf.use_asymmetric:
+            if pssc_conf.use_asymmetric:
                 cls.asymmetric_embeddings = {
-                    k: load_sentence_embeddings(Path(v)) for d in conf.sbert.asymmetric_embeddings for k, v in d.items()
+                    k: load_sentence_embeddings(Path(v)) for d in pssc_conf.sbert.asymmetric_embeddings for k, v in
+                    d.items()
                 }
 
             logger.info("Loading SentenceTransformer Models into Memory...")
             cls.sembedders = {}
-            if conf.use_symmetric:
+            if pssc_conf.use_symmetric:
                 cls.sembedders['symm'] = SentenceTransformer(cls.symmetric_model)
-            if conf.use_asymmetric:
+            if pssc_conf.use_asymmetric:
                 cls.sembedders['asym'] = SentenceTransformer(cls.asymmetric_model)
 
             # setup faiss
             # TODO check comment regarding nprobe for FlatIPIndex quantizer on github
-            cls.faiss_nprobe = conf.faiss.nprobe
+            cls.faiss_nprobe = pssc_conf.faiss.nprobe
             logger.info("Loading FAISS Indices into Memory...")
-            if conf.use_symmetric:
+            if pssc_conf.use_symmetric:
                 cls.symmetric_indices = {
-                    k: faiss.read_index(v) for d in conf.faiss.symmetric_indices for k, v in d.items()
+                    k: faiss.read_index(v) for d in pssc_conf.faiss.symmetric_indices for k, v in d.items()
                 }
-            if conf.use_asymmetric:
+            if pssc_conf.use_asymmetric:
                 cls.asymmetric_indices = {
-                    k: faiss.read_index(v) for d in conf.faiss.asymmetric_indices for k, v in d.items()
+                    k: faiss.read_index(v) for d in pssc_conf.faiss.asymmetric_indices for k, v in d.items()
                 }
 
         return cls.__singleton
