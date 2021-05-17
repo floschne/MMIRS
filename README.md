@@ -1,5 +1,7 @@
-# Multi-Modal Image Retrieval (MMIR)
+# Multi-Modal Image Retrieval System (MMIRS)
 This repo holds the code for my Master Thesis at Language Technology (LT) Group of the University of Hamburg  
+
+# NOTE THAT THIS IS WIP AND THE SYSTEM CHANGED A LOT. THIS README IS OUTDATED!
 
 ## How to run locally
 _Assuming your in the root folder of this repository_
