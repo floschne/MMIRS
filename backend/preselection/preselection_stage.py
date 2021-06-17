@@ -39,7 +39,7 @@ class PreselectionStage(object):
         logger.debug(f"Merging with {merge_op}")
 
         if merge_op == MergeOp.UNION:
-            merged = list(focus.keys()) + list(context.keys())
+            merged = list(focus.keys() | context.keys())
         elif merge_op == MergeOp.INTERSECTION:
             # intersect the key sets
             merged = list(focus.keys() & context.keys())
@@ -47,7 +47,7 @@ class PreselectionStage(object):
             # union as fallback if (way) too less items got returned
             if len(merged) < max_num_relevant // 10:
                 logger.debug(f"Merging with UNION as fallback. Intersection size: {len(merged)}")
-                merged = list(focus.keys()) + list(context.keys())
+                merged = list(focus.keys() | context.keys())
         else:
             raise NotImplementedError(f"Merge Operation {merge_op} not implemented!")
 
