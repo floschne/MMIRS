@@ -1,9 +1,10 @@
 import os
 import sys
 from types import SimpleNamespace
-from typing import List
 
+import numpy as np
 from loguru import logger
+from typing import List
 
 from backend.fineselection.data import TeranISS
 from backend.fineselection.retriever import Retriever
@@ -44,11 +45,15 @@ class TeranRetriever(Retriever):
 
         # compute the matching scores
         # TODO weight bei focus signal!!!!
-        distance_sorted_indices = compute_distances(img_embs,
+        distances, wra_matrices = compute_distances(img_embs,
                                                     query_embs,
                                                     img_length,
                                                     query_lengths,
-                                                    self.model_config)
+                                                    self.model_config,
+                                                    return_wra_matrices=True)
+
+        # get the img indices descended sorted by the distance matrix
+        distance_sorted_indices = np.argsort(distances)[::-1]
 
         # get the top-k image names / ids
         top_k_indices = distance_sorted_indices[:top_k]
