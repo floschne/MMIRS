@@ -20,6 +20,12 @@ class ImageDatasource(object):
     def get_image_file_name(self, img_id: str):
         return self.image_prefix + img_id + self.image_suffix
 
+    def __repr__(self):
+        return (f"ImageDatasource(dataset={self.dataset},\n"
+                f"\timages_root={self.images_root},"
+                f"\timage_prefix={self.image_prefix},"
+                f"\timage_suffix={self.image_suffix})")
+
 
 class ImageServer(object):
     def __init__(self, image_srv_name: str):
