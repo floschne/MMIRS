@@ -17,7 +17,7 @@ class WTFIDF(object):
         self.doc_id_prefix = doc_id_prefix
 
         # load the index
-        df = pd.read_feather(file)
+        df = pd.read_feather(file, use_threads=True)
 
         # remove doc_id_prefix
         df['doc'] = df['doc'].apply(lambda x: re.sub(doc_id_prefix, '', x))
