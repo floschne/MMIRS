@@ -27,7 +27,7 @@ class PreselectionStage(object):
             cls.__context_preselector = ContextPreselector()
             cls.__focus_preselector = FocusPreselector()
 
-            cls._conf = conf.preselection.stage
+            cls._conf = conf.preselection
 
         return cls.__singleton
 
