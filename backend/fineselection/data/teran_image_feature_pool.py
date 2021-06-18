@@ -44,7 +44,9 @@ class TeranImageFeaturePool(ImageFeaturePool):
             if self.source_dataset == 'coco':
                 # TODO fix this elsewhere (preferably in the Sentence Embedding Structure.
                 #  There the leading 0 get removed because the id's are stored as integers)
-                img_ids = [TeranImageFeaturePool.fill_leading_coco_zeros(img_id) for img_id in img_ids]
+
+                # FIXME filter the duplicates that are induced from the merge op (or the datasource! see comment in PSS)
+                img_ids = list(set([TeranImageFeaturePool.fill_leading_coco_zeros(img_id) for img_id in img_ids]))
 
             subset = self.data.get_subset(image_ids=img_ids, pre_fetch_in_memory=True)
         return TeranISS(images=subset)

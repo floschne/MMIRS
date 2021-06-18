@@ -38,6 +38,10 @@ class PreselectionStage(object):
                                 merge_op: MergeOp = MergeOp.INTERSECTION) -> List[str]:
         logger.debug(f"Merging with {merge_op}")
 
+        # FIXME - when using coco, there are some image ids where the leading 0s are missing
+        #  these are not filtered out by the set operations! this happens later when the TeranIss is created but should
+        #  be done before... albeit it has no effect. just for cleanliness!
+
         if merge_op == MergeOp.UNION:
             merged = list(focus.keys() | context.keys())
         elif merge_op == MergeOp.INTERSECTION:
