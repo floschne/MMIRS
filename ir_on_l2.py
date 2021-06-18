@@ -51,10 +51,10 @@ if __name__ == '__main__':
     # run IR for all captions
     for row in tqdm(df.iterrows(), desc="Running image retrieval on each caption", total=len(df)):
         # do the retrieval
-        res = top_k_image_ids = retriever.find_top_k_images(focus=None,
-                                                            context=row[1]['caption'],
-                                                            top_k=50,
-                                                            iss=iss)
+        res = retriever.find_top_k_images(focus=None,
+                                          context=row[1]['caption'],
+                                          top_k=50,
+                                          iss=iss)
         top_k_results.append(res)
 
     # save the top k in the dataframe
