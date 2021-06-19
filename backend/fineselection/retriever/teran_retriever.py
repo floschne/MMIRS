@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import numpy as np
 from loguru import logger
-from typing import List
+from typing import List, Union, Tuple
 
 from backend.fineselection.data import TeranISS
 from backend.fineselection.retriever import Retriever
@@ -35,7 +35,12 @@ class TeranRetriever(Retriever):
         self.model_config = teran_config
 
     @logger.catch
-    def find_top_k_images(self, focus: str, context: str, top_k: int, iss: TeranISS) -> List[str]:
+    def find_top_k_images(self,
+                          focus: str,
+                          context: str,
+                          top_k: int,
+                          iss: TeranISS,
+                          return_alignment_matrices: bool = False) -> Union[List[str], Tuple[List[str], np.ndarray]]:
         # compute query embedding
         query_encoder = QueryEncoder(self.model_config, self.teran)
         query_embs, query_lengths = query_encoder.compute_query_embedding(context)
@@ -44,7 +49,8 @@ class TeranRetriever(Retriever):
         img_embs, img_length = iss.get_images()
 
         # compute the matching scores
-        # TODO weight bei focus signal!!!!
+        wra_matrices: np.ndarray  # type hint
+        distances: np.ndarray  # type hint
         distances, wra_matrices = compute_distances(img_embs,
                                                     query_embs,
                                                     img_length,
@@ -58,6 +64,12 @@ class TeranRetriever(Retriever):
         # get the top-k image names / ids
         top_k_indices = distance_sorted_indices[:top_k]
         top_k_images = iss.get_image_ids(top_k_indices)
+
+        # TODO weight by focus signal!!!!
+
+        if return_alignment_matrices:
+            # get the wra matrices of the top-k
+            return top_k_images, wra_matrices[top_k_indices, ...]
         return top_k_images
 
     @staticmethod

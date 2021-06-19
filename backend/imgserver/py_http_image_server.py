@@ -53,6 +53,8 @@ class PyHttpImageServer(ImageServer):
                 for f in glob.glob(os.path.join(cls.__link_root_dir, "*")):
                     os.remove(f)
 
+            cls.annotated_images_filename_cache = dict()
+
             # setup http server thread
             logger.info("Starting PyHttpImageServer Thread...")
             cls.http_server_thread = ThreadPoolExecutor(max_workers=1)
@@ -100,20 +102,24 @@ class PyHttpImageServer(ImageServer):
     def get_img_url(self, img_id: str, dataset: str, annotated: bool = False) -> str:
         # get the path of the image
         img_p = self.get_image_path(img_id, dataset)
-        # hard link into serving directory
-        link = self.__hard_link_into_link_root_dir(img_p)
-        # image is now available via url
-        return url.urljoin(self._base_url, os.path.basename(link))
+        if not annotated:
+            # hard link into serving directory
+            link = self.__hard_link_into_link_root_dir(img_p)  # image is now available via url
+            return url.urljoin(self._base_url, os.path.basename(link))
+        else:
+            # the annotated images get registered in the MaxFocusRegionAnnotator, so we do not have to link them again
+            return url.urljoin(self._base_url, self.annotated_images_filename_cache[(img_id, dataset)])
 
     def get_img_urls(self, img_ids: str, dataset: str, annotated: bool = False) -> List[str]:
         return [self.get_img_url(img_id, dataset, annotated) for img_id in img_ids]
 
     def get_image_path(self, img_id: str, dataset: str) -> str:
         if dataset not in self.datasources:
-            logger.error(f"Images for Dataset {dataset} not available!")
-            raise KeyError(f"Image Datasource for dataset {dataset} is not registered!")
+            logger.error(f"Images for Dataset {dataset} are not available!")
+            raise KeyError(f"Images for Dataset {dataset} are not available!")
         return self.datasources[dataset].get_image_path(img_id)
 
-    def register_annotated_image(self, img_id: str, dataset: str, annotated_path: str):
-        self.__hard_link_into_link_root_dir(annotated_path, force=True)
+    def register_annotated_image(self, img_id: str, dataset: str, annotated_image_path: str):
+        self.__hard_link_into_link_root_dir(annotated_image_path, force=True)
+        self.annotated_images_filename_cache[(img_id, dataset)] = os.path.basename(annotated_image_path)
         logger.debug(f"Registered annotated image for Image {img_id} of dataset {dataset}!")

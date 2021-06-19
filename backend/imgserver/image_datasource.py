@@ -1,15 +1,16 @@
-import os
 import glob
+import os
 
 from loguru import logger
 
 
+# TODO make superclass or interface (see BBoxesDatasource)
 class ImageDatasource(object):
     def __init__(self, dataset: str, images_root: str, image_prefix: str, image_suffix: str):
         self.dataset = dataset
         self.images_root = images_root
-        self.image_prefix = image_prefix
-        self.image_suffix = image_suffix
+        self.image_prefix = image_prefix if image_prefix is not None else ''
+        self.image_suffix = image_suffix if image_suffix is not None else ''
 
         if not os.path.lexists(images_root) or not os.path.isdir(images_root):
             logger.error(f"Cannot read Image Datasource at {images_root}!")

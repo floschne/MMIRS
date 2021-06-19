@@ -1,7 +1,7 @@
+from loguru import logger
 from typing import List, Optional
 
-from loguru import logger
-
+from backend.fineselection.annotator.max_focus_region_annotator import MaxFocusRegionAnnotator
 from backend.fineselection.data.image_feature_pool_factory import ImageFeaturePoolFactory
 from backend.fineselection.retriever import RetrieverFactory
 
@@ -22,6 +22,9 @@ class FineSelectionStage(object):
             cls.pool_factory = ImageFeaturePoolFactory()
             cls.pool_factory.create_and_cache_all_available()
 
+            # setup MaxFocusAnnotator
+            cls.max_focus_anno = MaxFocusRegionAnnotator()
+
         return cls.__singleton
 
     def find_top_k_images(self,
@@ -30,7 +33,8 @@ class FineSelectionStage(object):
                           top_k: int,
                           retriever_name: str,
                           dataset: str,
-                          preselected_image_ids: List[str] = None):
+                          preselected_image_ids: List[str] = None,
+                          annotate_max_focus_region: bool = False):
         # get the retriever
         retriever = self.retriever_factory.create_or_get_retriever(retriever_name)
 
@@ -41,6 +45,16 @@ class FineSelectionStage(object):
         iss = pool.get_image_search_space(preselected_image_ids)
 
         # do the retrieval
-        top_k_image_ids = retriever.find_top_k_images(focus, context, top_k, iss)
-
+        top_k_image_ids, alignment_matrices = retriever.find_top_k_images(focus=focus,
+                                                                          context=context,
+                                                                          top_k=top_k,
+                                                                          iss=iss,
+                                                                          return_alignment_matrices=True)
+        if annotate_max_focus_region:
+            annotated_paths = [self.max_focus_anno.annotate_max_focus_region(image_id=iid,
+                                                                             dataset=dataset,
+                                                                             wra_matrix=alignment_matrices,
+                                                                             focus=focus,
+                                                                             context=context)
+                               for iid in top_k_image_ids]
         return top_k_image_ids

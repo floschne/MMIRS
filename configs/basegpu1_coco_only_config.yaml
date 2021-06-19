@@ -81,12 +81,14 @@ fine_selection:
       model_config: configs/teran_coco_MrSw_IR_PreComp_API.yaml
 
   max_focus_annotator:
-    bbox_roots:
-      coco: /srv/7schneid/datasets/coco/features_36/bua
-      f30k: /srv/7schneid/datasets/f30k/features_36/bua
-      wicsmmir: /srv/7schneid/datasets/wicsmmir/features_36
+    datasources:
+      coco:
+        bbox_root: /srv/7schneid/datasets/coco/features_36/bua
+        fn_prefix: COCO_000000
+        fn_suffix: .npz
 
     annotated_images_dst: /srv/7schneid/mmirs_annotated_images_dst
+    tokenizer_vocab: data/vocab/bert-base-uncased-vocab.txt
 
 mmirs:
   pss:

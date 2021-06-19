@@ -1,6 +1,5 @@
-from typing import Optional
-
 from pydantic import BaseModel, Field, validator, root_validator
+from typing import Optional
 
 
 class RetrievalRequest(BaseModel):
@@ -12,6 +11,9 @@ class RetrievalRequest(BaseModel):
     # TODO allow multiple datasets --> make union and search on union
     dataset: Optional[str] = Field(description="The dataset in which the Retriever searches for the top-k images",
                                    default='coco')
+    annotate_max_focus_region: Optional[bool] = Field(
+        description="If true, the region with the maximum focus signal is highlighted in the returned images",
+        default=False)
 
     @root_validator
     def non_empty_focus_must_exist_in_context(cls, values):

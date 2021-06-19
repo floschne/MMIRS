@@ -1,7 +1,6 @@
 from loguru import logger
 from typing import List, Tuple, Set
 
-from backend import LighttpImgServer
 from backend.fineselection import FineSelectionStage
 from backend.fineselection.data import ImageFeaturePoolFactory
 from backend.fineselection.retriever import RetrieverFactory
@@ -20,9 +19,7 @@ class MMIRS(object):
 
             cls._conf = conf.mmirs
 
-            if cls._conf.img_server == 'lighttp':
-                cls.img_srv = LighttpImgServer()
-            elif cls._conf.img_server == 'pyhttp':
+            if cls._conf.img_server == 'pyhttp':
                 cls.img_srv = PyHttpImageServer()
             else:
                 raise NotImplementedError(f"Image Server {cls._conf.img_server} not available!")
@@ -37,11 +34,14 @@ class MMIRS(object):
                               context: str,
                               top_k: int,
                               retriever_name: str,
-                              dataset: str) -> List[str]:
+                              dataset: str,
+                              annotate_max_focus_region: bool = False) -> List[str]:
         """
         Retrieves the top-k matching images according to focus and context in the specified image pool with the specified
         retriever.
 
+        :param annotate_max_focus_region:
+        :type annotate_max_focus_region:
         :param focus:
         :type focus:
         :param context:
@@ -72,10 +72,11 @@ class MMIRS(object):
                                                    top_k=top_k,
                                                    retriever_name=retriever_name,
                                                    dataset=dataset,
-                                                   preselected_image_ids=pss_imgs)
+                                                   preselected_image_ids=pss_imgs,
+                                                   annotate_max_focus_region=annotate_max_focus_region)
 
         # get URLs
-        top_k_img_urls = self.img_srv.get_img_urls(top_k_img_ids, dataset)
+        top_k_img_urls = self.img_srv.get_img_urls(top_k_img_ids, dataset, annotated=annotate_max_focus_region)
         return top_k_img_urls
 
     @staticmethod

@@ -39,7 +39,7 @@ class UniterRetriever(Retriever):
         self.pin_mem = pin_mem
 
     @logger.catch
-    def find_top_k_images(self, focus: str, context: str, top_k: int, iss: ImageSearchSpace) -> List[str]:
+    def find_top_k_images(self, focus: str, context: str, top_k: int, iss: ImageSearchSpace,) -> List[str]:
         opts = self._build_retrieval_opts(focus, context, top_k)
         logger.info(opts)
 

@@ -1,12 +1,24 @@
 import uvicorn
 from fastapi import FastAPI
+from loguru import logger
 
 import api.routers.general as general
 import api.routers.retrieval as retrieval
+from backend.imgserver.py_http_image_server import PyHttpImageServer
 from config import conf
 
 # create the main app
 app = FastAPI()
+
+
+@logger.catch(reraise=True)
+@app.on_event("shutdown")
+def shutdown_event():
+    try:
+        PyHttpImageServer().shutdown()
+    except:
+        pass
+
 
 # include the routers
 app.include_router(general.router)

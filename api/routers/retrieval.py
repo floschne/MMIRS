@@ -1,10 +1,12 @@
+import time
+
 from fastapi import APIRouter
 from loguru import logger
 from starlette.responses import JSONResponse
 
 from api.model import RetrievalRequest
 from backend import MMIRS
-import time
+
 router = APIRouter()
 
 PREFIX = '/retrieval'
@@ -23,6 +25,7 @@ async def top_k_images(req: RetrievalRequest) -> JSONResponse:
                                        context=req.context,
                                        top_k=req.top_k,
                                        retriever_name=req.retriever,
-                                       dataset=req.dataset)
+                                       dataset=req.dataset,
+                                       annotate_max_focus_region=req.annotate_max_focus_region)
     logger.info(f"MMIR execution took: {time.time() - start}")
     return JSONResponse(content=urls)
