@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, root_validator
 
 
 class RetrievalRequest(BaseModel):
@@ -12,6 +12,15 @@ class RetrievalRequest(BaseModel):
     # TODO allow multiple datasets --> make union and search on union
     dataset: Optional[str] = Field(description="The dataset in which the Retriever searches for the top-k images",
                                    default='coco')
+
+    @root_validator
+    def non_empty_focus_must_exist_in_context(cls, values):
+        context = values.get('context')
+        focus = values.get('focus')
+
+        if (focus is not None and len(focus) != 0) and focus not in context:
+            raise ValueError(f"Non empty focus must exist in context!")
+        return values
 
     @validator('retriever')
     def retriever_must_exist(cls, retriever: str):
