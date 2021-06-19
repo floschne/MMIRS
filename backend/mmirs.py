@@ -1,11 +1,11 @@
-from typing import List, Tuple, Set
-
 from loguru import logger
+from typing import List, Tuple, Set
 
 from backend import LighttpImgServer
 from backend.fineselection import FineSelectionStage
 from backend.fineselection.data import ImageFeaturePoolFactory
 from backend.fineselection.retriever import RetrieverFactory
+from backend.imgserver.py_http_image_server import PyHttpImageServer
 from backend.preselection import PreselectionStage
 from config import conf
 
@@ -20,10 +20,15 @@ class MMIRS(object):
 
             cls._conf = conf.mmirs
 
+            if cls._conf.img_server == 'lighttp':
+                cls.img_srv = LighttpImgServer()
+            elif cls._conf.img_server == 'pyhttp':
+                cls.img_srv = PyHttpImageServer()
+            else:
+                raise NotImplementedError(f"Image Server {cls._conf.img_server} not available!")
+
             cls.pss = PreselectionStage()
             cls.fss = FineSelectionStage()
-
-            cls.img_srv = LighttpImgServer()
 
         return cls.__singleton
 
