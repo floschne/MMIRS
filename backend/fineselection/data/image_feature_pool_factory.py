@@ -1,6 +1,5 @@
-from typing import Tuple, Set
-
 from loguru import logger
+from typing import Tuple, Set
 
 from backend.fineselection.data import TeranImageFeaturePool, ImageFeaturePool
 from backend.fineselection.retriever.retriever import RetrieverType
@@ -38,7 +37,7 @@ class ImageFeaturePoolFactory(object):
         if retriever_type.lower() == RetrieverType.TERAN:
             self.pool_cache[(source_dataset, retriever_type)] = TeranImageFeaturePool(source_dataset=source_dataset,
                                                                                       pre_fetch=pool_conf.pre_fetch,
-                                                                                      data_root=pool_conf.data_root,
+                                                                                      feats_root=pool_conf.feats_root,
                                                                                       fn_prefix=pool_conf.fn_prefix,
                                                                                       num_workers=pool_conf.num_workers)
         elif retriever_type.lower() == RetrieverType.UNITER:

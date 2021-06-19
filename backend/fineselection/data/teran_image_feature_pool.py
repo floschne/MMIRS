@@ -1,4 +1,5 @@
 import sys
+
 from typing import List, Optional
 
 from backend.fineselection.data import ImageFeaturePool, TeranISS
@@ -11,23 +12,25 @@ from data import PreComputedImageEmbeddingsData
 
 
 class TeranImageFeaturePool(ImageFeaturePool):
+
     def __init__(self,
                  source_dataset: str,
-                 data_root: str,
+                 feats_root: str,
                  fn_prefix: str,
                  pre_fetch: bool = False,
                  num_workers: int = 8):
         """
         :param source_dataset: The dataset the image features originate from
         :param pre_fetch: if True load the !complete! feature pool into memory
-        :param data_root: the root directory where the features are located
+        :param feats_root: the root directory where the features are located
         :param num_workers: The number of workers to load the features in parallel
         """
         super().__init__(source_dataset=source_dataset,
                          target_retriever_type=RetrieverType.TERAN,
                          pre_fetch=pre_fetch,
-                         data_root=data_root)
-        self.data = PreComputedImageEmbeddingsData(pre_computed_img_embeddings_root=data_root,
+                         feats_root=feats_root)
+
+        self.data = PreComputedImageEmbeddingsData(pre_computed_img_embeddings_root=feats_root,
                                                    pre_fetch_in_memory=False,
                                                    fn_prefix=fn_prefix,
                                                    num_pre_fetch_workers=num_workers)
