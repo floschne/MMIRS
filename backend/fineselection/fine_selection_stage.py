@@ -78,22 +78,23 @@ class FineSelectionStage(object):
 
         top_k_image_ids = result_dict['top_k'][ranked_by.value]
 
-        if annotate_max_focus_region:
-            focus_span = retriever.find_focus_span_in_context(context=context, focus=focus)
-            wra_matrices: np.ndarray = result_dict['wra'][ranked_by.value]
+        wra_matrices: np.ndarray = result_dict['wra'][ranked_by.value]
+        focus_span = retriever.find_focus_span_in_context(context=context, focus=focus)
 
+        if annotate_max_focus_region:
             for iid, wra in zip(top_k_image_ids, wra_matrices):
-                max_region_idx = retriever.find_max_focus_region_index(focus_span, wra)
+                max_focus_region_idx = retriever.find_max_focus_region_index(focus_span, wra)
                 self.max_focus_anno.annotate_max_focus_region(image_id=iid,
                                                               dataset=dataset,
-                                                              max_region_idx=max_region_idx,
+                                                              max_focus_region_idx=max_focus_region_idx,
                                                               focus_text=focus)
         if return_wra_matrices:
-            wra_matrices: np.ndarray = result_dict['wra'][ranked_by.value]
-
             for iid, wra in zip(top_k_image_ids, wra_matrices):
+                max_focus_region_idx = retriever.find_max_focus_region_index(focus_span, wra)
                 context_tokens = retriever.tokenize(context, remove_sep_cls=True)
                 self.wra_plotter.plot_wra(image_id=iid,
                                           context_tokens=context_tokens[0],
-                                          wra=wra)
+                                          wra=wra,
+                                          max_focus_region_idx=max_focus_region_idx,
+                                          focus_span=focus_span)
         return top_k_image_ids

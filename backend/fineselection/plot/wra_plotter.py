@@ -4,8 +4,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
+from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from typing import List
+from typing import List, Tuple
 
 from backend.imgserver.py_http_image_server import PyHttpImageServer
 from config import conf
@@ -40,7 +41,9 @@ class WRAPlotter(object):
     def plot_wra(self,
                  image_id: str,
                  wra: np.ndarray,
-                 context_tokens: List[str]) -> str:
+                 context_tokens: List[str],
+                 max_focus_region_idx: int,
+                 focus_span: Tuple[int, int]) -> str:
         logger.info(f"Creating WRA Plot for image {image_id}!")
 
         # setup matplotlib
@@ -68,10 +71,12 @@ class WRAPlotter(object):
 
         im = ax.imshow(wra, interpolation='nearest')
 
-        # annotated cells with wra value
-        # for i in range(num_regions):
-        #     for j in range(num_tokens):
-        #         text = ax.text(j, i, f"{wra[i, j] : .2f}", ha="center", va="center", color="w")
+        # annotated the max focus region
+        y = max_focus_region_idx - 0.5
+        x = focus_span[0] - 0.5
+        w = focus_span[1] - focus_span[0] + 1
+        h = 1
+        ax.add_patch(Rectangle((x, y), w, h, fill=False, edgecolor='red', lw=2, clip_on=False))
 
         # colorbar -> https://stackoverflow.com/a/18195921
         # create an axes on the right side of ax. The width of cax will be 5%

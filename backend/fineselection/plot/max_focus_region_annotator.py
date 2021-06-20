@@ -59,14 +59,14 @@ class MaxFocusRegionAnnotator(object):
     def annotate_max_focus_region(self,
                                   image_id: str,
                                   dataset: str,
-                                  max_region_idx: int,
+                                  max_focus_region_idx: int,
                                   focus_text: str) -> str:
         logger.info(f"Annotating maximum focus region for image {image_id} of dataset {dataset}")
 
         # get the bboxes for the image
         bboxes = self.__load_bboxes(image_id, dataset)
         # find the bbox with maximum focus signal in the WRA matrix
-        foc_bb = bboxes[max_region_idx]
+        foc_bb = bboxes[max_focus_region_idx]
 
         # get the image path
         # TODO get image server differently (this is very prone to cyclic dependency issues)
