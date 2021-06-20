@@ -50,3 +50,14 @@ class ImageServer(object):
         :param annotated_path: the path to the annotated image
         """
         raise NotImplementedError()
+
+    @abstractmethod
+    def register_register_wra_plot(self,
+                                   img_id: str,
+                                   wra_plot_path: str):
+        """
+        Registers, i.e., makes the wra plot at the provided path available so that it can be served via URL
+        :param img_id: the ID of the image
+        :param wra_plot_path: the path to the wra plot for the image
+        """
+        raise NotImplementedError()

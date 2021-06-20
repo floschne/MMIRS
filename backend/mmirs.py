@@ -1,7 +1,7 @@
 from loguru import logger
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Union
 
-#from api.model import RetrievalRequest
+# from api.model import RetrievalRequest
 from backend.fineselection import FineSelectionStage
 from backend.fineselection.data import ImageFeaturePoolFactory
 from backend.fineselection.retriever import RetrieverFactory
@@ -31,7 +31,7 @@ class MMIRS(object):
         return cls.__singleton
 
     # FIXME we cannot give a type hint for req: RetrievalRequest b
-    def retrieve_top_k_images(self, req) -> List[str]:
+    def retrieve_top_k_images(self, req) -> Union[List[str], Tuple[List[str], List[str]]]:
         """
         Retrieves the top-k matching images according to focus and context in the specified image pool with the specified
         retriever.
@@ -76,8 +76,8 @@ class MMIRS(object):
         # get URLs
         top_k_img_urls = self.img_srv.get_img_urls(top_k_img_ids, dataset, annotated=annotate_max_focus_region)
         if return_wra_matrices:
-            # TODO img server has to serve wra matrices
-            pass
+            top_k_wra_urls = self.img_srv.get_wra_urls(top_k_img_ids)
+            return top_k_img_urls, top_k_wra_urls
         return top_k_img_urls
 
     @staticmethod

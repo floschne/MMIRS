@@ -54,6 +54,7 @@ class PyHttpImageServer(ImageServer):
                     os.remove(f)
 
             cls.annotated_images_filename_cache = dict()
+            cls.wra_plot_filename_cache = dict()
 
             # setup http server thread
             logger.info("Starting PyHttpImageServer Thread...")
@@ -110,8 +111,15 @@ class PyHttpImageServer(ImageServer):
             # the annotated images get registered in the MaxFocusRegionAnnotator, so we do not have to link them again
             return url.urljoin(self._base_url, self.annotated_images_filename_cache[(img_id, dataset)])
 
+    def get_wra_url(self, img_id: str) -> str:
+        # the wra plots get registered in the WRAPlotter, so we do not have to link them again
+        return url.urljoin(self._base_url, self.wra_plot_filename_cache[img_id])
+
     def get_img_urls(self, img_ids: str, dataset: str, annotated: bool = False) -> List[str]:
         return [self.get_img_url(img_id, dataset, annotated) for img_id in img_ids]
+
+    def get_wra_urls(self, img_ids: str) -> List[str]:
+        return [self.get_wra_url(img_id) for img_id in img_ids]
 
     def get_image_path(self, img_id: str, dataset: str) -> str:
         if dataset not in self.datasources:
@@ -123,3 +131,8 @@ class PyHttpImageServer(ImageServer):
         self.__hard_link_into_link_root_dir(annotated_image_path, force=True)
         self.annotated_images_filename_cache[(img_id, dataset)] = os.path.basename(annotated_image_path)
         logger.debug(f"Registered annotated image for Image {img_id} of dataset {dataset}!")
+
+    def register_wra_plot(self, img_id: str, wra_plot_path: str):
+        self.__hard_link_into_link_root_dir(wra_plot_path, force=True)
+        self.wra_plot_filename_cache[img_id] = os.path.basename(wra_plot_path)
+        logger.debug(f"Registered WRA Plot for Image {img_id}!")

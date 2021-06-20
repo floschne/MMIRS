@@ -1,11 +1,11 @@
 import numpy as np
-
 from enum import unique, Enum
 from loguru import logger
 from typing import List, Optional
 
 from backend.fineselection.data.image_feature_pool_factory import ImageFeaturePoolFactory
 from backend.fineselection.plot.max_focus_region_annotator import MaxFocusRegionAnnotator
+from backend.fineselection.plot.wra_plotter import WRAPlotter
 from backend.fineselection.retriever import RetrieverFactory
 
 
@@ -34,6 +34,9 @@ class FineSelectionStage(object):
 
             # setup MaxFocusAnnotator
             cls.max_focus_anno = MaxFocusRegionAnnotator()
+
+            # setup wra plotter
+            cls.wra_plotter = WRAPlotter()
 
         return cls.__singleton
 
@@ -86,7 +89,11 @@ class FineSelectionStage(object):
                                                               max_region_idx=max_region_idx,
                                                               focus_text=focus)
         if return_wra_matrices:
-            # TODO plot WRA Matrices and publish in image server
-            pass
+            wra_matrices: np.ndarray = result_dict['wra'][ranked_by.value]
 
+            for iid, wra in zip(top_k_image_ids, wra_matrices):
+                context_tokens = retriever.tokenize(context, remove_sep_cls=True)
+                self.wra_plotter.plot_wra(image_id=iid,
+                                          context_tokens=context_tokens[0],
+                                          wra=wra)
         return top_k_image_ids

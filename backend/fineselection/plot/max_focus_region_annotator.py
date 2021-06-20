@@ -121,6 +121,7 @@ class MaxFocusRegionAnnotator(object):
         # persist the annotated image
         dst = self.get_max_focus_annotated_image_path(image_id)
         fig.savefig(dst)
+        plt.clf()
         logger.info(f"Persisted MaxFocus-annotated image at {dst}")
 
         # FIXME get image server dynamically
