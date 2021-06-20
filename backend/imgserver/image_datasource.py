@@ -27,7 +27,7 @@ class ImageDatasource(object):
         return img_p
 
     def get_number_of_images(self):
-        return len(glob.glob(self.get_image_file_name("*")))
+        return len(glob.glob(os.path.join(self.images_root, self.get_image_file_name("*"))))
 
     def __repr__(self):
         return (f"ImageDatasource(dataset={self.dataset},\n"

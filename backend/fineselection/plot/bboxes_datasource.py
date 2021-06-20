@@ -27,7 +27,7 @@ class BBoxesDatasource(object):
         return img_p
 
     def get_number_of_bboxes(self):
-        return len(glob.glob(self.get_bbox_file_name("*")))
+        return len(glob.glob(os.path.join(self.bboxes_root, self.get_bbox_file_name("*"))))
 
     def __repr__(self):
         return (f"BBoxesDatasource(dataset={self.dataset},\n"
