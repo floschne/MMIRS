@@ -1,10 +1,9 @@
 import os
-from concurrent.futures import as_completed, ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, Future
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import tqdm
 from loguru import logger
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -33,9 +32,6 @@ class WRAPlotter(object):
 
             cls.cell_size_px = cls.__conf.cell_size_px
 
-            # init plotter pool
-            cls.pool = ProcessPoolExecutor(max_workers=cls.__conf.max_workers)
-
             cls.img_server = PyHttpImageServer()
 
         return cls.__singleton
@@ -44,32 +40,28 @@ class WRAPlotter(object):
         return os.path.join(self.__wra_plots_dst, f"{image_id}_wra.png")
 
     def generate_wra_plots(self,
+                           pool: ProcessPoolExecutor,
                            image_ids: List[str],
                            wra_matrices: np.ndarray,
                            max_focus_region_indices: List[int],
                            focus_span: Tuple[int, int],
-                           context_tokens: List[str], ):
+                           context_tokens: List[str]) -> List[Future]:
 
-        with tqdm.tqdm(desc='Generating WRA Plots', total=len(image_ids)) as pbar:
-            futures = []
-            for iid, wra, mfri in zip(image_ids, wra_matrices, max_focus_region_indices):
-                # submit all plotting tasks and keep future
-                futures.append(self.pool.submit(plot_wra,
-                                                image_id=iid,
-                                                wra=wra,
-                                                context_tokens=context_tokens,
-                                                max_focus_region_idx=mfri,
-                                                focus_span=focus_span,
-                                                cell_size_px=self.cell_size_px,
-                                                dst=self.get_wra_plot_path(iid)
-                                                )
-                               )
+        futures = []
+        for iid, wra, mfri in zip(image_ids, wra_matrices, max_focus_region_indices):
+            # submit all plotting tasks and keep future
+            futures.append(pool.submit(plot_wra,
+                                       image_id=iid,
+                                       wra=wra,
+                                       context_tokens=context_tokens,
+                                       max_focus_region_idx=mfri,
+                                       focus_span=focus_span,
+                                       cell_size_px=self.cell_size_px,
+                                       dst=self.get_wra_plot_path(iid)
+                                       )
+                           )
 
-            for future in as_completed(futures):
-                iid, dst = future.result()
-                # register wra plot at image server
-                self.img_server.register_wra_plot(img_id=iid, wra_plot_path=dst)
-                pbar.update(1)
+        return futures
 
 
 def plot_wra(
@@ -79,7 +71,7 @@ def plot_wra(
         max_focus_region_idx: int,
         focus_span: Tuple[int, int],
         cell_size_px: int,
-        dst: str) -> Tuple[str, str]:
+        dst: str) -> Tuple[str, str, str]:
     logger.info(f"Creating WRA Plot for image {image_id}!")
 
     # setup matplotlib
@@ -112,7 +104,7 @@ def plot_wra(
     x = focus_span[0] - 0.5
     w = focus_span[1] - focus_span[0] + 1
     h = 1
-    ax.add_patch(Rectangle((x, y), w, h, fill=False, edgecolor='red', lw=2, clip_on=False))
+    ax.add_patch(Rectangle((x, y), w, h, fill=False, edgecolor='darkred', lw=4, clip_on=False))
 
     # colorbar -> https://stackoverflow.com/a/18195921
     # create an axes on the right side of ax. The width of cax will be 5%
@@ -126,4 +118,4 @@ def plot_wra(
     plt.clf()
     logger.info(f"Persisted WRA Plot for image {image_id} at {dst}")
 
-    return image_id, dst
+    return image_id, dst, 'wra_plot'

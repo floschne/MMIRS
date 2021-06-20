@@ -1,3 +1,5 @@
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
 import numpy as np
 from enum import unique, Enum
 from loguru import logger
@@ -7,6 +9,8 @@ from backend.fineselection.data.image_feature_pool_factory import ImageFeaturePo
 from backend.fineselection.plot.max_focus_region_annotator import MaxFocusRegionAnnotator
 from backend.fineselection.plot.wra_plotter import WRAPlotter
 from backend.fineselection.retriever import RetrieverFactory
+from backend.imgserver.py_http_image_server import PyHttpImageServer
+from config import conf
 
 
 @unique
@@ -32,13 +36,22 @@ class FineSelectionStage(object):
             cls.pool_factory = ImageFeaturePoolFactory()
             cls.pool_factory.create_and_cache_all_available()
 
+            cls.img_server = PyHttpImageServer()
+
             # setup MaxFocusAnnotator
             cls.max_focus_anno = MaxFocusRegionAnnotator()
 
             # setup wra plotter
             cls.wra_plotter = WRAPlotter()
 
+            # init worker pool
+            cls.worker_pool = ProcessPoolExecutor(max_workers=conf.fine_selection.max_workers)
+
         return cls.__singleton
+
+    def shutdown(self):
+        logger.info(f'Shutting down FineSelectionStage!')
+        self.worker_pool.shutdown(wait=False, cancel_futures=True)
 
     def find_top_k_images(self,
                           focus: Optional[str],  # TODO what should happen if focus is None further down
@@ -78,27 +91,41 @@ class FineSelectionStage(object):
 
         top_k_image_ids = result_dict['top_k'][ranked_by.value]
 
-        wra_matrices: np.ndarray = result_dict['wra'][ranked_by.value]
-        focus_span = retriever.find_focus_span_in_context(context=context, focus=focus)
-
-        if annotate_max_focus_region:
-            for iid, wra in zip(top_k_image_ids, wra_matrices):
-                max_focus_region_idx = retriever.find_max_focus_region_index(focus_span, wra)
-                self.max_focus_anno.annotate_max_focus_region(image_id=iid,
-                                                              dataset=dataset,
-                                                              max_focus_region_idx=max_focus_region_idx,
-                                                              focus_text=focus)
-        if return_wra_matrices:
-            context_tokens = retriever.tokenize(context, remove_sep_cls=True)
-
-            # retrieve all max focus region indices per image / wra
+        if annotate_max_focus_region or return_wra_matrices:
+            wra_matrices: np.ndarray = result_dict['wra'][ranked_by.value]
+            focus_span = retriever.find_focus_span_in_context(context=context, focus=focus)
             max_focus_region_indices = [retriever.find_max_focus_region_index(focus_span, wra)
                                         for iid, wra in zip(top_k_image_ids, wra_matrices)]
 
-            # generate plots in parallel
-            self.wra_plotter.generate_wra_plots(image_ids=top_k_image_ids,
-                                                wra_matrices=wra_matrices,
-                                                max_focus_region_indices=max_focus_region_indices,
-                                                focus_span=focus_span,
-                                                context_tokens=context_tokens[0])
+            futures = []
+            if annotate_max_focus_region:
+                futures += self.max_focus_anno.annotate_max_focus_regions(pool=self.worker_pool,
+                                                                          image_ids=top_k_image_ids,
+                                                                          dataset=dataset,
+                                                                          max_focus_region_indices=max_focus_region_indices,
+                                                                          focus_text=focus)
+
+            if return_wra_matrices:
+                # generate plots in parallel
+                context_tokens = retriever.tokenize(context, remove_sep_cls=True)
+                futures += self.wra_plotter.generate_wra_plots(pool=self.worker_pool,
+                                                               image_ids=top_k_image_ids,
+                                                               wra_matrices=wra_matrices,
+                                                               max_focus_region_indices=max_focus_region_indices,
+                                                               focus_span=focus_span,
+                                                               context_tokens=context_tokens[0])
+
+                for future in as_completed(futures):
+                    iid, dst, task = future.result()
+                    if task == 'anno':
+                        # register annotated image at image server
+                        self.img_server.register_annotated_image(img_id=iid,
+                                                                 dataset=dataset,
+                                                                 annotated_image_path=dst)
+                    elif task == 'wra_plot':
+                        # register wra plot at image server
+                        self.img_server.register_wra_plot(img_id=iid, wra_plot_path=dst)
+                    else:
+                        raise ValueError(f"Task {task} is unknown!")
+
         return top_k_image_ids

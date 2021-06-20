@@ -1,9 +1,11 @@
 import os
+from concurrent.futures import ProcessPoolExecutor, Future
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
+from typing import List, Tuple
 
 from backend.fineselection.plot.bboxes_datasource import BBoxesDatasource
 from backend.imgserver.py_http_image_server import PyHttpImageServer
@@ -42,91 +44,105 @@ class MaxFocusRegionAnnotator(object):
 
         return cls.__singleton
 
-    def __load_bboxes(self, image_id: str, dataset: str) -> np.ndarray:
-        if dataset not in self.__datasources:
-            logger.error(f"BBoxes for Dataset {dataset} are not available!")
-            raise KeyError(f"BBoxes for {dataset} are not available!")
-        bbox_fn = self.__datasources[dataset].get_bbox_path(image_id)
-        feat = np.load(bbox_fn, allow_pickle=True)
-        # noinspection PyUnresolvedReferences
-        if 'bbox' not in feat.files:
-            raise ValueError("Cannot find bbox in npz archive!")
-        return feat['bbox']
-
     def get_max_focus_annotated_image_path(self, image_id: str):
         return os.path.join(self.__annotated_images_dst, f"{image_id}_annotated.png")
 
-    def annotate_max_focus_region(self,
-                                  image_id: str,
-                                  dataset: str,
-                                  max_focus_region_idx: int,
-                                  focus_text: str) -> str:
-        logger.info(f"Annotating maximum focus region for image {image_id} of dataset {dataset}")
+    def annotate_max_focus_regions(self,
+                                   pool: ProcessPoolExecutor,
+                                   image_ids: List[str],
+                                   max_focus_region_indices: List[int],
+                                   dataset: str,
+                                   focus_text: str) -> List[Future]:
+        if dataset not in self.__datasources:
+            logger.error(f"BBoxes for Dataset {dataset} are not available!")
+            raise KeyError(f"BBoxes for {dataset} are not available!")
 
-        # get the bboxes for the image
-        bboxes = self.__load_bboxes(image_id, dataset)
-        # find the bbox with maximum focus signal in the WRA matrix
-        foc_bb = bboxes[max_focus_region_idx]
+        futures = []
+        for iid, mfri in zip(image_ids, max_focus_region_indices):
+            # submit all tasks and keep future
+            futures.append(pool.submit(annotate_max_focus_region,
+                                       image_id=iid,
+                                       bbox_fn=self.__datasources[dataset].get_bbox_path(iid),
+                                       max_focus_region_idx=mfri,
+                                       dst=self.get_max_focus_annotated_image_path(iid),
+                                       img_path=self.img_server.get_image_path(iid, dataset),
+                                       dataset=dataset,
+                                       focus_text=focus_text
+                                       )
+                           )
+        return futures
 
-        # get the image path
-        # TODO get image server differently (this is very prone to cyclic dependency issues)
-        img_path = self.img_server.get_image_path(image_id, dataset)
 
-        # setup matplotlib so that the image gets drawn on the axes canvas in full size
-        # https://stackoverflow.com/a/53816322
-        dpi = mpl.rcParams['figure.dpi']
-        im_data = plt.imread(img_path)
-        height, width, depth = im_data.shape
-        # Size of the figure in inches to fit the image
-        figsize = width / float(dpi), height / float(dpi)
-        # Create a figure of the right size with one axes that takes up the full figure
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_axes([0, 0, 1, 1])
-        # Hide spines, ticks, etc.
-        ax.axis('off')
-        # Display the image on the axes canvas
-        ax.imshow(im_data)
+def load_bboxes(bbox_fn: str) -> np.ndarray:
+    feat = np.load(bbox_fn, allow_pickle=True)
+    # noinspection PyUnresolvedReferences
+    if 'bbox' not in feat.files:
+        raise ValueError("Cannot find bbox in npz archive!")
+    return feat['bbox']
 
-        # get the position of the bbox
-        x0, y0, x1, y1 = foc_bb[0], foc_bb[1], foc_bb[2], foc_bb[3]
-        w, h = x1 - x0, y1 - y0
 
-        # draw the bbox border rectangle
-        # TODO color, etc in config
-        bbox_border_lw = 2
-        ax.add_patch(plt.Rectangle((x0, y0), w, h,
-                                   fill=False,
-                                   edgecolor='red',
-                                   linewidth=bbox_border_lw,
-                                   alpha=0.75))
+def annotate_max_focus_region(image_id: str,
+                              bbox_fn: str,
+                              max_focus_region_idx: int,
+                              dst: str,
+                              img_path: str,
+                              dataset: str,
+                              focus_text: str) -> Tuple[str, str, str]:
+    logger.info(f"Annotating maximum focus region for image {image_id} of dataset {dataset}")
 
-        # draw the focus text in a rect on the upper right outside of the bbox
-        # TODO color, etc in config
-        fs = 15
-        text_border_lw = 1
-        # check if the text is outside of the image and re-position if so
-        ty0 = y0 - bbox_border_lw - fs // 2
-        if ty0 < fs // 2:  # outside on top
-            ty0 = y1 + fs + bbox_border_lw + text_border_lw  # reposition below bbox
-        if ty0 + fs + text_border_lw > height:  # outside on bottom
-            ty0 = y1 - bbox_border_lw - fs // 2  # reposition inside the bbox at the bottom
+    # load bboxes
+    bboxes = load_bboxes(bbox_fn)
+    # find the bbox with maximum focus signal in the WRA matrix
+    foc_bb = bboxes[max_focus_region_idx]
 
-        ax.text(x0 + text_border_lw + bbox_border_lw,
-                ty0,
-                focus_text,
-                bbox=dict(facecolor='blue', alpha=0.5, linewidth=text_border_lw),
-                fontsize=fs,
-                color='white')
+    # setup matplotlib so that the image gets drawn on the axes canvas in full size
+    # https://stackoverflow.com/a/53816322
+    dpi = mpl.rcParams['figure.dpi']
+    im_data = plt.imread(img_path)
+    height, width, depth = im_data.shape
+    # Size of the figure in inches to fit the image
+    figsize = width / float(dpi), height / float(dpi)
+    # Create a figure of the right size with one axes that takes up the full figure
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_axes([0, 0, 1, 1])
+    # Hide spines, ticks, etc.
+    ax.axis('off')
+    # Display the image on the axes canvas
+    ax.imshow(im_data)
 
-        # persist the annotated image
-        dst = self.get_max_focus_annotated_image_path(image_id)
-        fig.savefig(dst)
-        plt.clf()
-        logger.info(f"Persisted MaxFocus-annotated image at {dst}")
+    # get the position of the bbox
+    x0, y0, x1, y1 = foc_bb[0], foc_bb[1], foc_bb[2], foc_bb[3]
+    w, h = x1 - x0, y1 - y0
 
-        # FIXME get image server dynamically
-        self.img_server.register_annotated_image(img_id=image_id,
-                                                 dataset=dataset,
-                                                 annotated_image_path=dst)
+    # draw the bbox border rectangle
+    # TODO color, etc in config
+    bbox_border_lw = 2
+    ax.add_patch(plt.Rectangle((x0, y0), w, h,
+                               fill=False,
+                               edgecolor='red',
+                               linewidth=bbox_border_lw,
+                               alpha=0.75))
 
-        return dst
+    # draw the focus text in a rect on the upper right outside of the bbox
+    # TODO color, etc in config
+    fs = 15
+    text_border_lw = 1
+    # check if the text is outside of the image and re-position if so
+    ty0 = y0 - bbox_border_lw - fs // 2
+    if ty0 < fs // 2:  # outside on top
+        ty0 = y1 + fs + bbox_border_lw + text_border_lw  # reposition below bbox
+    if ty0 + fs + text_border_lw > height:  # outside on bottom
+        ty0 = y1 - bbox_border_lw - fs // 2  # reposition inside the bbox at the bottom
+
+    ax.text(x0 + text_border_lw + bbox_border_lw,
+            ty0,
+            focus_text,
+            bbox=dict(facecolor='blue', alpha=0.5, linewidth=text_border_lw),
+            fontsize=fs,
+            color='white')
+
+    fig.savefig(dst)
+    plt.clf()
+    logger.info(f"Persisted MaxFocus-annotated image at {dst}")
+
+    return image_id, dst, 'anno'

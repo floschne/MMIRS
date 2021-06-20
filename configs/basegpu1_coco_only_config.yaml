@@ -65,6 +65,8 @@ preselection:
       nprobe: 350  # Number of VCs to explorer at search time (tradeoff between search accuracy and search time)
 
 fine_selection:
+  max_workers: 32
+
   feature_pools:
     coco:
       teran:
@@ -92,7 +94,6 @@ fine_selection:
   wra_plotter:
     wra_plots_dst: /srv/7schneid/mmirs_wra_images_dst
     cell_size_px: 40
-    max_workers: 16
 
 
 mmirs:

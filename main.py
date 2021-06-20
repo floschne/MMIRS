@@ -4,6 +4,7 @@ from loguru import logger
 
 import api.routers.general as general
 import api.routers.retrieval as retrieval
+from backend.fineselection import FineSelectionStage
 from backend.imgserver.py_http_image_server import PyHttpImageServer
 from config import conf
 
@@ -16,6 +17,7 @@ app = FastAPI()
 def shutdown_event():
     try:
         PyHttpImageServer().shutdown()
+        FineSelectionStage().shutdown()
     except:
         pass
 
