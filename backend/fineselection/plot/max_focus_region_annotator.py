@@ -4,7 +4,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
-from tokenizers import BertWordPieceTokenizer
 from typing import Tuple
 
 from backend.fineselection.annotator.bboxes_datasource import BBoxesDatasource
@@ -48,8 +47,6 @@ class MaxFocusRegionAnnotator(object):
                     f"Cannot read tokenizer vocab file at {tokenizer_vocab}!"
                     "Download from: https://github.com/huggingface/tokenizers/issues/59#issuecomment-593184936")
 
-            cls.tokenizer = BertWordPieceTokenizer(tokenizer_vocab, lowercase=True)
-
             cls.img_server = PyHttpImageServer()
 
         return cls.__singleton
@@ -65,37 +62,16 @@ class MaxFocusRegionAnnotator(object):
             raise ValueError("Cannot find bbox in npz archive!")
         return feat['bbox']
 
-    # def __load_bboxes(self, image_ids: List[str]) -> List[np.ndarray]:
-    #     return [self.__load_bbox(iid) for iid in image_ids]
-
     @staticmethod
-    def __get_max_focus_bbox(wra_matrix: np.ndarray,
-                             bboxes: np.ndarray,
-                             focus_span: Tuple[int, int]):
+    def __get_max_focus_bbox(focus_scores: np.ndarray,
+                             focus_span: Tuple[int, int],
+                             bboxes: np.ndarray):
         # get bbox with the strongest signal of the focus
         # --> wra score
         # TODO factor computing wra score out to a central place
-        foc_bb_idx = np.argmax(np.sum(wra_matrix[:, focus_span], axis=1))
+        foc_bb_idx = np.argmax(focus_scores)
         logger.debug(f"Focus has strongest signal in BBox {foc_bb_idx}!")
         return bboxes[foc_bb_idx]
-
-    def __find_focus_span(self, context: str, focus: str):
-        # TODO move type of tokenizer to config! and do not hardcode the tokenizer...
-        #  different models might use other tokenizers so this should actually be the models task!
-        logger.debug(f"Searching focus span in context...")
-        ctx_enc = self.tokenizer.encode(context)
-        focus_enc = self.tokenizer.encode(focus)
-
-        # TODO move removal of sep and cls token to config
-        ctx_tokens, ctx_token_ids = ctx_enc.tokens[1:-1], ctx_enc.ids[1:-1]
-        focus_tokens, focus_token_ids = focus_enc.tokens[1:-1], focus_enc.ids[1:-1]
-
-        begin_idx = ctx_token_ids.index(focus_token_ids[0])
-        end_idx = ctx_token_ids.index(focus_token_ids[-1])
-
-        logger.debug(f"Found focus span in context: {(begin_idx, end_idx)}!")
-
-        return begin_idx, end_idx
 
     def get_max_focus_annotated_image_path(self, image_id: str):
         return os.path.join(self.__annotated_images_dst, f"{image_id}_annotated.png")
@@ -103,17 +79,17 @@ class MaxFocusRegionAnnotator(object):
     def annotate_max_focus_region(self,
                                   image_id: str,
                                   dataset: str,
-                                  wra_matrix: np.ndarray,
-                                  context: str,
-                                  focus: str) -> str:
+                                  focus_scores: np.ndarray,
+                                  focus_span: Tuple[int, int],
+                                  focus_text: str) -> str:
         logger.info(f"Annotating maximum focus region for image {image_id} of dataset {dataset}")
-
-        focus_span = self.__find_focus_span(context=context, focus=focus)
 
         # get the bboxes for the image
         bboxes = self.__load_bboxes(image_id, dataset)
         # find the bbox with maximum focus signal in the WRA matrix
-        foc_bb = self.__get_max_focus_bbox(wra_matrix, bboxes, focus_span)
+        foc_bb = self.__get_max_focus_bbox(focus_scores=focus_scores,
+                                           focus_span=focus_span,
+                                           bboxes=bboxes)
 
         # get the image path
         # TODO get image server differently (this is very prone to cyclic dependency issues)
@@ -160,7 +136,7 @@ class MaxFocusRegionAnnotator(object):
 
         ax.text(x0 + text_border_lw + bbox_border_lw,
                 ty0,
-                focus,
+                focus_text,
                 bbox=dict(facecolor='blue', alpha=0.5, linewidth=text_border_lw),
                 fontsize=fs,
                 color='white')
