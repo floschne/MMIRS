@@ -89,12 +89,16 @@ class FineSelectionStage(object):
                                                               max_focus_region_idx=max_focus_region_idx,
                                                               focus_text=focus)
         if return_wra_matrices:
-            for iid, wra in zip(top_k_image_ids, wra_matrices):
-                max_focus_region_idx = retriever.find_max_focus_region_index(focus_span, wra)
-                context_tokens = retriever.tokenize(context, remove_sep_cls=True)
-                self.wra_plotter.plot_wra(image_id=iid,
-                                          context_tokens=context_tokens[0],
-                                          wra=wra,
-                                          max_focus_region_idx=max_focus_region_idx,
-                                          focus_span=focus_span)
+            context_tokens = retriever.tokenize(context, remove_sep_cls=True)
+
+            # retrieve all max focus region indices per image / wra
+            max_focus_region_indices = [retriever.find_max_focus_region_index(focus_span, wra)
+                                        for iid, wra in zip(top_k_image_ids, wra_matrices)]
+
+            # generate plots in parallel
+            self.wra_plotter.generate_wra_plots(image_ids=top_k_image_ids,
+                                                wra_matrices=wra_matrices,
+                                                max_focus_region_indices=max_focus_region_indices,
+                                                focus_span=focus_span,
+                                                context_tokens=context_tokens[0])
         return top_k_image_ids
