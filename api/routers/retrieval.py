@@ -21,11 +21,6 @@ mmirs = MMIRS()
 async def top_k_images(req: RetrievalRequest) -> JSONResponse:
     logger.info(f"GET request on {PREFIX}/top_k_images with RetrievalRequest: {req}")
     start = time.time()
-    urls = mmirs.retrieve_top_k_images(focus=req.focus,
-                                       context=req.context,
-                                       top_k=req.top_k,
-                                       retriever_name=req.retriever,
-                                       dataset=req.dataset,
-                                       annotate_max_focus_region=req.annotate_max_focus_region)
+    urls = mmirs.retrieve_top_k_images(req)
     logger.info(f"MMIR execution took: {time.time() - start}")
     return JSONResponse(content=urls)

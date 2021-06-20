@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field, validator, root_validator
 from typing import Optional
 
+from backend.fineselection.fine_selection_stage import RankedBy
+
 
 class RetrievalRequest(BaseModel):
     context: str = Field(description="Query to the image retrieval model. E.g. 'Two girls enjoying some icecream.'")
@@ -14,6 +16,15 @@ class RetrievalRequest(BaseModel):
     annotate_max_focus_region: Optional[bool] = Field(
         description="If true, the region with the maximum focus signal is highlighted in the returned images",
         default=False)
+    ranked_by: Optional[RankedBy] = Field(description="Method to rank the images. Either by context, focus or combined",
+                                          default=RankedBy.COMBINED)
+    focus_weight: Optional[float] = Field(
+        description="Weight of the focus when ranking the images (w * focus + (1-2) * context)",
+        default=0.5)
+    return_scores: Optional[bool] = Field(description="If true the scores of the top-k images are returned",
+                                          default=False)
+    return_wra_matrices: Optional[bool] = Field(description="If true the WRA matrices of the top-k images are returned",
+                                                default=False)
 
     @root_validator
     def non_empty_focus_must_exist_in_context(cls, values):
@@ -37,3 +48,15 @@ class RetrievalRequest(BaseModel):
         if not MMIRS.dataset_is_available(dataset):
             raise ValueError(f"Dataset {dataset} does not exist!")
         return dataset.strip()
+
+    @validator('ranked_by')
+    def ranked_by_must_be_valid(cls, ranked_by: RankedBy):
+        if ranked_by != RankedBy.COMBINED or ranked_by != RankedBy.FOCUS or ranked_by != RankedBy.COMBINED:
+            ranked_by = RankedBy.COMBINED
+        return ranked_by
+
+    @validator('focus_weight')
+    def focus_weight_must_be_in_range(cls, focus_weight: float):
+        if focus_weight < 0. or focus_weight > 1.:
+            raise ValueError("Focus Weight has to be between 0 and 1!")
+        return focus_weight

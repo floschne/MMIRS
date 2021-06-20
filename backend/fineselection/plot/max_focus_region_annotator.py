@@ -4,9 +4,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
-from typing import Tuple
 
-from backend.fineselection.annotator.bboxes_datasource import BBoxesDatasource
+from backend.fineselection.plot.bboxes_datasource import BBoxesDatasource
 from backend.imgserver.py_http_image_server import PyHttpImageServer
 from config import conf
 
@@ -39,14 +38,6 @@ class MaxFocusRegionAnnotator(object):
                 except:
                     raise FileNotFoundError(f"Cannot read annotated image destination at {cls.__annotated_images_dst}!")
 
-            # TODO move to config! and do not hardcode the tokenizer... different models might use other tokenizers
-            #  so this should actually be the models task!
-            tokenizer_vocab = cls.__conf.tokenizer_vocab
-            if not os.path.lexists(tokenizer_vocab):
-                raise FileNotFoundError(
-                    f"Cannot read tokenizer vocab file at {tokenizer_vocab}!"
-                    "Download from: https://github.com/huggingface/tokenizers/issues/59#issuecomment-593184936")
-
             cls.img_server = PyHttpImageServer()
 
         return cls.__singleton
@@ -62,34 +53,20 @@ class MaxFocusRegionAnnotator(object):
             raise ValueError("Cannot find bbox in npz archive!")
         return feat['bbox']
 
-    @staticmethod
-    def __get_max_focus_bbox(focus_scores: np.ndarray,
-                             focus_span: Tuple[int, int],
-                             bboxes: np.ndarray):
-        # get bbox with the strongest signal of the focus
-        # --> wra score
-        # TODO factor computing wra score out to a central place
-        foc_bb_idx = np.argmax(focus_scores)
-        logger.debug(f"Focus has strongest signal in BBox {foc_bb_idx}!")
-        return bboxes[foc_bb_idx]
-
     def get_max_focus_annotated_image_path(self, image_id: str):
         return os.path.join(self.__annotated_images_dst, f"{image_id}_annotated.png")
 
     def annotate_max_focus_region(self,
                                   image_id: str,
                                   dataset: str,
-                                  focus_scores: np.ndarray,
-                                  focus_span: Tuple[int, int],
+                                  max_region_idx: int,
                                   focus_text: str) -> str:
         logger.info(f"Annotating maximum focus region for image {image_id} of dataset {dataset}")
 
         # get the bboxes for the image
         bboxes = self.__load_bboxes(image_id, dataset)
         # find the bbox with maximum focus signal in the WRA matrix
-        foc_bb = self.__get_max_focus_bbox(focus_scores=focus_scores,
-                                           focus_span=focus_span,
-                                           bboxes=bboxes)
+        foc_bb = bboxes[max_region_idx]
 
         # get the image path
         # TODO get image server differently (this is very prone to cyclic dependency issues)

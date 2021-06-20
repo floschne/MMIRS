@@ -35,6 +35,7 @@ class PreselectionStage(object):
     def __merge_relevant_images(focus: Dict[str, float],
                                 context: Dict[str, float],
                                 max_num_relevant: int,
+                                min_num_relevant: int = 500,  # TODO do we want this?! what is a good number?
                                 merge_op: MergeOp = MergeOp.INTERSECTION) -> List[str]:
         logger.debug(f"Merging with {merge_op}")
 

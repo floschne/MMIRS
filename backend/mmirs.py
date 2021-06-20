@@ -1,6 +1,7 @@
 from loguru import logger
 from typing import List, Tuple, Set
 
+#from api.model import RetrievalRequest
 from backend.fineselection import FineSelectionStage
 from backend.fineselection.data import ImageFeaturePoolFactory
 from backend.fineselection.retriever import RetrieverFactory
@@ -29,32 +30,25 @@ class MMIRS(object):
 
         return cls.__singleton
 
-    def retrieve_top_k_images(self,
-                              focus: str,
-                              context: str,
-                              top_k: int,
-                              retriever_name: str,
-                              dataset: str,
-                              annotate_max_focus_region: bool = False) -> List[str]:
+    # FIXME we cannot give a type hint for req: RetrievalRequest b
+    def retrieve_top_k_images(self, req) -> List[str]:
         """
         Retrieves the top-k matching images according to focus and context in the specified image pool with the specified
         retriever.
-
-        :param annotate_max_focus_region:
-        :type annotate_max_focus_region:
-        :param focus:
-        :type focus:
-        :param context:
-        :type context:
-        :param top_k:
-        :type top_k:
-        :param retriever_name:
-        :type retriever_name:
-        :param dataset:
-        :type dataset:
-        :return: URLs of the top-k matching images
-        :rtype:
         """
+
+        focus = req.focus
+        context = req.context
+        top_k = req.top_k
+        retriever_name = req.retriever
+        dataset = req.dataset
+        annotate_max_focus_region = req.annotate_max_focus_region
+
+        ranked_by = req.ranked_by
+        focus_weight = req.focus_weight
+        return_scores = req.return_scores
+        return_wra_matrices = req.return_wra_matrices
+
         # find relevant images via PreselectionStage
         pss_imgs = self.pss.retrieve_relevant_images(focus=focus,
                                                      context=context,
@@ -73,10 +67,17 @@ class MMIRS(object):
                                                    retriever_name=retriever_name,
                                                    dataset=dataset,
                                                    preselected_image_ids=pss_imgs,
-                                                   annotate_max_focus_region=annotate_max_focus_region)
+                                                   ranked_by=ranked_by,
+                                                   annotate_max_focus_region=annotate_max_focus_region,
+                                                   focus_weight=focus_weight,
+                                                   return_scores=return_scores,
+                                                   return_wra_matrices=return_wra_matrices)
 
         # get URLs
         top_k_img_urls = self.img_srv.get_img_urls(top_k_img_ids, dataset, annotated=annotate_max_focus_region)
+        if return_wra_matrices:
+            # TODO img server has to serve wra matrices
+            pass
         return top_k_img_urls
 
     @staticmethod

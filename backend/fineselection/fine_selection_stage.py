@@ -1,9 +1,19 @@
+import numpy as np
+
+from enum import unique, Enum
 from loguru import logger
 from typing import List, Optional
 
-from backend.fineselection.annotator.max_focus_region_annotator import MaxFocusRegionAnnotator
 from backend.fineselection.data.image_feature_pool_factory import ImageFeaturePoolFactory
+from backend.fineselection.plot.max_focus_region_annotator import MaxFocusRegionAnnotator
 from backend.fineselection.retriever import RetrieverFactory
+
+
+@unique
+class RankedBy(str, Enum):
+    FOCUS = 'focus'
+    CONTEXT = 'context'
+    COMBINED = 'combined'
 
 
 class FineSelectionStage(object):
@@ -34,7 +44,12 @@ class FineSelectionStage(object):
                           retriever_name: str,
                           dataset: str,
                           preselected_image_ids: List[str] = None,
-                          annotate_max_focus_region: bool = False):
+                          ranked_by: RankedBy = RankedBy.COMBINED,
+                          annotate_max_focus_region: bool = False,
+                          focus_weight: float = 0.5,
+                          return_scores: bool = False,
+                          return_wra_matrices: bool = False):
+
         # get the retriever
         retriever = self.retriever_factory.create_or_get_retriever(retriever_name)
 
@@ -44,17 +59,34 @@ class FineSelectionStage(object):
         # build and load the image search space (into memory!) containing the preselected images
         iss = pool.get_image_search_space(preselected_image_ids)
 
+        return_separated_ranks = False
+        if ranked_by != RankedBy.COMBINED:
+            return_separated_ranks = True
+
         # do the retrieval
-        top_k_image_ids, alignment_matrices = retriever.find_top_k_images(focus=focus,
-                                                                          context=context,
-                                                                          top_k=top_k,
-                                                                          iss=iss,
-                                                                          return_alignment_matrices=True)
+        result_dict = retriever.find_top_k_images(focus=focus,
+                                                  context=context,
+                                                  top_k=top_k,
+                                                  iss=iss,
+                                                  focus_weight=focus_weight,
+                                                  return_scores=return_scores,
+                                                  return_wra_matrices=return_wra_matrices or annotate_max_focus_region,
+                                                  return_separated_ranks=return_separated_ranks or annotate_max_focus_region)
+
+        top_k_image_ids = result_dict['top_k'][ranked_by.value]
+
         if annotate_max_focus_region:
-            annotated_paths = [self.max_focus_anno.annotate_max_focus_region(image_id=iid,
-                                                                             dataset=dataset,
-                                                                             wra_matrix=alignment_matrices,
-                                                                             focus=focus,
-                                                                             context=context)
-                               for iid in top_k_image_ids]
+            focus_span = retriever.find_focus_span_in_context(context=context, focus=focus)
+            wra_matrices: np.ndarray = result_dict['wra'][ranked_by.value]
+
+            for iid, wra in zip(top_k_image_ids, wra_matrices):
+                max_region_idx = retriever.find_max_focus_region_index(focus_span, wra)
+                self.max_focus_anno.annotate_max_focus_region(image_id=iid,
+                                                              dataset=dataset,
+                                                              max_region_idx=max_region_idx,
+                                                              focus_text=focus)
+        if return_wra_matrices:
+            # TODO plot WRA Matrices and publish in image server
+            pass
+
         return top_k_image_ids
