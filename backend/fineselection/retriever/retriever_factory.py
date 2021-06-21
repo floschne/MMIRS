@@ -1,9 +1,8 @@
+from loguru import logger
 from typing import List
 
-from loguru import logger
-from config import conf
-
 from backend.fineselection.retriever import Retriever, TeranRetriever, UniterRetriever
+from config import conf
 
 
 class RetrieverFactory(object):
@@ -16,6 +15,7 @@ class RetrieverFactory(object):
 
             cls._conf = conf.fine_selection.retrievers
 
+            # TODO also store the type of the retrieve instead of just the name
             cls.available_retrievers = cls._conf.keys()
             cls.retriever_cache = {}
 
