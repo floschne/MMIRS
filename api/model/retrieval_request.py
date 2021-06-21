@@ -6,7 +6,7 @@ from backend.fineselection.fine_selection_stage import RankedBy
 
 class RetrievalRequest(BaseModel):
     context: str = Field(description="Query to the image retrieval model. E.g. 'Two girls enjoying some icecream.'")
-    focus: Optional[str] = Field(description="Focus word(s) in the context. E.g. 'icecream'")
+    focus: str = Field(description="Focus word(s) in the context. E.g. 'icecream'")
     top_k: Optional[int] = Field(description="Focus word(s) in the context. E.g. 'icecream'", default=10)
     retriever: Optional[str] = Field(description="Retriever (model) that performs the retrieval task",
                                      default='teran_coco')
@@ -27,12 +27,12 @@ class RetrievalRequest(BaseModel):
                                                 default=False)
 
     @root_validator
-    def non_empty_focus_must_exist_in_context(cls, values):
+    def focus_must_exist_in_context(cls, values):
         context = values.get('context')
         focus = values.get('focus')
 
-        if (focus is not None and len(focus) != 0) and focus not in context:
-            raise ValueError(f"Non empty focus must exist in context!")
+        if focus is None or len(focus) == 0 or focus not in context:
+            raise ValueError(f"Focus must not be empty and must exist in context!")
         return values
 
     @validator('retriever')
@@ -60,3 +60,9 @@ class RetrievalRequest(BaseModel):
         if focus_weight < 0. or focus_weight > 1.:
             raise ValueError("Focus Weight has to be between 0 and 1!")
         return focus_weight
+
+    @validator('context')
+    def context_must_not_be_empty(cls, context: str):
+        if context is None or len(context) == 0:
+            raise ValueError("Context must not be empty!")
+        return context
