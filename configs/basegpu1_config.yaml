@@ -5,15 +5,15 @@ image_server:
   datasources:
     coco:
       images_root: /srv/7schneid/datasets/coco/images
-      prefix: COCO_000000
+      image_prefix: COCO_000000
       image_suffix: .jpg
     wicsmmir:
       images_root: /srv/7schneid/datasets/wicsmmir/images
-      prefix: wikicaps_
+      image_prefix: wikicaps_
       image_suffix: .png
     f30k:
       images_root: /srv/7schneid/datasets/f30k/images
-      prefix: ''
+      image_prefix: ''
       image_suffix: .jpg
 
   lighttp:
@@ -110,16 +110,16 @@ fine_selection:
         pre_fetch: False
 
   retrievers:
-    uniter_base:
-      retriever_type: uniter
-      n_gpu: 1
-      uniter_dir: ${env:UNITER_DATA_DIR}
-      model_config: /srv/7schneid/MMIR/models/uniter/config/uniter-base.json
-      num_imgs: 1000
-      batch_size: 50
-      n_data_workers: 0
-      fp16: True
-      pin_mem: True
+#    uniter_base:
+#      retriever_type: uniter
+#      n_gpu: 1
+#      uniter_dir: ${env:UNITER_DATA_DIR}
+#      model_config: /srv/7schneid/MMIR/models/uniter/config/uniter-base.json
+#      num_imgs: 1000
+#      batch_size: 50
+#      n_data_workers: 0
+#      fp16: True
+#      pin_mem: True
 
     teran_coco:
       retriever_type: teran
@@ -163,6 +163,7 @@ fine_selection:
   wra_plotter:
     wra_plots_dst: /srv/7schneid/mmirs_wra_images_dst
     cell_size_px: 40
+
 
 mmirs:
   pss:
