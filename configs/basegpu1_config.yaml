@@ -155,7 +155,7 @@ fine_selection:
 
       wicsmmir:
         bbox_root: /srv/7schneid/datasets/wicsmmir/features_36
-        fn_prefix:
+        fn_prefix: wikicaps_
         fn_suffix: .npz
 
     annotated_images_dst: /srv/7schneid/mmirs_annotated_images_dst
@@ -171,6 +171,7 @@ mmirs:
     max_num_context_relevant: 5000
     max_num_focus_relevant: 5000
     max_num_relevant: 10000
+    min_num_relevant: 1000
     focus_weight_by_sim: False
     exact_context_retrieval: False
 

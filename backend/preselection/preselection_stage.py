@@ -1,9 +1,9 @@
 import random
 import time
-from enum import Enum, unique
-from typing import Dict, List
 
+from enum import Enum, unique
 from loguru import logger
+from typing import Dict, List
 
 from backend.preselection import ContextPreselector
 from backend.preselection import FocusPreselector
@@ -45,13 +45,15 @@ class PreselectionStage(object):
 
         if merge_op == MergeOp.UNION:
             merged = list(focus.keys() | context.keys())
+            logger.debug(f"Merge size: {len(merged)}")
         elif merge_op == MergeOp.INTERSECTION:
             # intersect the key sets
             merged = list(focus.keys() & context.keys())
+            logger.debug(f"Merge size: {len(merged)}")
 
             # union as fallback if (way) too less items got returned
-            if len(merged) < max_num_relevant // 10:
-                logger.debug(f"Merging with UNION as fallback. Intersection size: {len(merged)}")
+            if len(merged) < min_num_relevant:
+                logger.debug(f"Too few merged images from intersection! Merging with UNION as fallback!")
                 merged = list(focus.keys() | context.keys())
         else:
             raise NotImplementedError(f"Merge Operation {merge_op} not implemented!")
@@ -85,20 +87,20 @@ class PreselectionStage(object):
                                                                                      k=max_num_context_relevant,
                                                                                      dataset=dataset,
                                                                                      exact=exact_context_retrieval)
-        logger.info(f"ContextPreselector took: {time.time() - start}s")
+        logger.debug(f"ContextPreselector took: {time.time() - start}s")
 
         start = time.time()
         focus_relevant = self.__focus_preselector.retrieve_top_k_relevant_images(focus,
                                                                                  k=max_num_focus_relevant,
                                                                                  dataset=dataset,
                                                                                  weight_by_sim=focus_weight_by_sim)
-        logger.info(f"FocusPreselector took: {time.time() - start}s")
+        logger.debug(f"FocusPreselector took: {time.time() - start}s")
 
         start = time.time()
         merged = self.__merge_relevant_images(focus=focus_relevant,
                                               context=context_relevant,
                                               max_num_relevant=max_num_relevant,
                                               merge_op=merge_op)
-        logger.info(f"Merging took: {time.time() - start}s")
+        logger.debug(f"Merging took: {time.time() - start}s")
 
         return merged
