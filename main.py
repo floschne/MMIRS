@@ -4,9 +4,13 @@ from loguru import logger
 
 import api.routers.general as general
 import api.routers.retrieval as retrieval
+from backend import MMIRS
 from backend.fineselection import FineSelectionStage
 from backend.imgserver.py_http_image_server import PyHttpImageServer
 from config import conf
+
+# start MMIRS
+MMIRS()
 
 # create the main app
 app = FastAPI()
