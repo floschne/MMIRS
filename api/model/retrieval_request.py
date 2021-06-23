@@ -7,7 +7,7 @@ from backend.fineselection.fine_selection_stage import RankedBy
 class RetrievalRequest(BaseModel):
     context: str = Field(description="Query to the image retrieval model. E.g. 'Two girls enjoying some icecream.'")
     focus: str = Field(description="Focus word(s) in the context. E.g. 'icecream'")
-    top_k: Optional[int] = Field(description="Focus word(s) in the context. E.g. 'icecream'", default=10)
+    top_k: Optional[int] = Field(description="The number of returned top-k images!", default=10)
     retriever: Optional[str] = Field(description="Retriever (model) that performs the retrieval task",
                                      default='teran_coco')
     # TODO allow multiple datasets --> make union and search on union

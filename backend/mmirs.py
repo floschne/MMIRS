@@ -82,6 +82,62 @@ class MMIRS(object):
             return top_k_img_urls, top_k_wra_urls
         return top_k_img_urls
 
+    def pss_retrieve_top_k_context_images(self,
+                                          context: str,
+                                          dataset: str,
+                                          k: int = 100,
+                                          exact: bool = False) -> List[str]:
+        """
+        Retrieves the top-k matching images according to the context from the PSS
+        """
+
+        # find relevant images via PreselectionStage
+        top_k_img_ids = self.pss.retrieve_top_k_context_relevant_images(context=context,
+                                                                        dataset=dataset,
+                                                                        k=k,
+                                                                        exact=exact)
+
+        # FIXME do this elsewhere!
+        if dataset == 'coco':
+            fixed_tk = []
+            for tk in top_k_img_ids:
+                while len(str(tk)) != 6:
+                    tk = '0' + tk
+                fixed_tk.append(tk)
+            top_k_img_ids = fixed_tk
+
+        # get URLs
+        top_k_img_urls = self.img_srv.get_img_urls(top_k_img_ids, dataset, annotated=False)
+        return top_k_img_urls
+
+    def pss_retrieve_top_k_focus_images(self,
+                                        focus: str,
+                                        dataset: str,
+                                        k: int = 100,
+                                        weight_by_sim: bool = False) -> List[str]:
+        """
+        Retrieves the top-k matching images according to the focus from the PSS
+        """
+
+        # find relevant images via PreselectionStage
+        top_k_img_ids = self.pss.retrieve_top_k_focus_relevant_images(focus=focus,
+                                                                      dataset=dataset,
+                                                                      k=k,
+                                                                      weight_by_sim=weight_by_sim)
+
+        # FIXME do this elsewhere!
+        if dataset == 'coco':
+            fixed_tk = []
+            for tk in top_k_img_ids:
+                while len(str(tk)) != 6:
+                    tk = '0' + tk
+                fixed_tk.append(tk)
+            top_k_img_ids = fixed_tk
+
+        # get URLs
+        top_k_img_urls = self.img_srv.get_img_urls(top_k_img_ids, dataset, annotated=False)
+        return top_k_img_urls
+
     @staticmethod
     def get_available_image_feature_pools() -> Set[Tuple[str, str]]:
         return ImageFeaturePoolFactory().get_available_pools()

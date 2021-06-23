@@ -7,6 +7,8 @@ from typing import List
 
 from api.model import RetrievalRequest
 from api.model.dataset import Dataset
+from api.model.pss_context_retrieval_request import PSSContextRetrievalRequest
+from api.model.pss_focus_retrieval_request import PSSFocusRetrievalRequest
 from api.model.retriever import Retriever
 from backend import MMIRS
 
@@ -23,6 +25,34 @@ async def top_k_images(req: RetrievalRequest) -> JSONResponse:
     logger.info(f"POST request on {PREFIX}/top_k_images with RetrievalRequest: {req}")
     start = time.time()
     urls = MMIRS().retrieve_top_k_images(req)
+    logger.info(f"MMIRS execution took: {time.time() - start}")
+    return JSONResponse(content=urls)
+
+
+@router.post('/pss/top_k_context',
+             tags=TAGS,
+             description='Retrieve the top-k context related images from the PreselectionStage')
+async def top_k_images(req: PSSContextRetrievalRequest) -> JSONResponse:
+    logger.info(f"POST request on {PREFIX}/pss/top_k_context with req: {req}")
+    start = time.time()
+    urls = MMIRS().pss_retrieve_top_k_context_images(context=req.context,
+                                                     dataset=req.dataset,
+                                                     k=req.top_k,
+                                                     exact=req.exact)
+    logger.info(f"MMIR execution took: {time.time() - start}")
+    return JSONResponse(content=urls)
+
+
+@router.post('/pss/top_k_focus',
+             tags=TAGS,
+             description='Retrieve the top-k focus related images from the PreselectionStage')
+async def top_k_images(req: PSSFocusRetrievalRequest) -> JSONResponse:
+    logger.info(f"POST request on {PREFIX}/pss/top_k_context with req: {req}")
+    start = time.time()
+    urls = MMIRS().pss_retrieve_top_k_focus_images(focus=req.focus,
+                                                   dataset=req.dataset,
+                                                   k=req.top_k,
+                                                   weight_by_sim=req.weight_by_sim)
     logger.info(f"MMIR execution took: {time.time() - start}")
     return JSONResponse(content=urls)
 
@@ -41,5 +71,5 @@ async def get_available_datasets() -> List[Dataset]:
             description='Returns the available retrievers.')
 async def get_available_datasets() -> List[Retriever]:
     logger.info(f"GET request on {PREFIX}/available_retrievers")
-    rets = mmirs.get_available_retrievers()
+    rets = MMIRS().get_available_retrievers()
     return [Retriever(name=ret) for ret in rets]

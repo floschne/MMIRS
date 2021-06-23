@@ -70,6 +70,25 @@ class PreselectionStage(object):
 
         return merged
 
+    def retrieve_top_k_context_relevant_images(self, context: str, dataset: str, k: int = 100, exact: bool = False):
+        start = time.time()
+        context_relevant = self.__context_preselector.retrieve_top_k_relevant_images(context,
+                                                                                     k=k,
+                                                                                     dataset=dataset,
+                                                                                     exact=exact)
+        logger.debug(f"ContextPreselector took: {time.time() - start}s")
+        return context_relevant
+
+    def retrieve_top_k_focus_relevant_images(self, focus: str, dataset: str, k: int = 100, weight_by_sim: bool = False):
+        start = time.time()
+        focus_relevant = self.__focus_preselector.retrieve_top_k_relevant_images(focus,
+                                                                                 k=k,
+                                                                                 dataset=dataset,
+                                                                                 weight_by_sim=weight_by_sim)
+        logger.debug(f"FocusPreselector took: {time.time() - start}s")
+
+        return focus_relevant
+
     def retrieve_relevant_images(self,
                                  focus: str,
                                  context: str,
@@ -82,19 +101,15 @@ class PreselectionStage(object):
                                  exact_context_retrieval: bool = False) -> List[str]:
 
         # TODO do this in two parallel threads!
-        start = time.time()
-        context_relevant = self.__context_preselector.retrieve_top_k_relevant_images(context,
-                                                                                     k=max_num_context_relevant,
-                                                                                     dataset=dataset,
-                                                                                     exact=exact_context_retrieval)
-        logger.debug(f"ContextPreselector took: {time.time() - start}s")
+        context_relevant = self.retrieve_top_k_context_relevant_images(context=context,
+                                                                       dataset=dataset,
+                                                                       k=max_num_context_relevant,
+                                                                       exact=exact_context_retrieval)
 
-        start = time.time()
-        focus_relevant = self.__focus_preselector.retrieve_top_k_relevant_images(focus,
-                                                                                 k=max_num_focus_relevant,
-                                                                                 dataset=dataset,
-                                                                                 weight_by_sim=focus_weight_by_sim)
-        logger.debug(f"FocusPreselector took: {time.time() - start}s")
+        focus_relevant = self.retrieve_top_k_focus_relevant_images(focus=focus,
+                                                                   dataset=dataset,
+                                                                   k=max_num_focus_relevant,
+                                                                   weight_by_sim=focus_weight_by_sim)
 
         start = time.time()
         merged = self.__merge_relevant_images(focus=focus_relevant,
