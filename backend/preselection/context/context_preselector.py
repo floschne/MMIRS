@@ -1,12 +1,12 @@
 import pickle
 import time
-from pathlib import Path
-from typing import Dict, Any
 
 import faiss
 import numpy as np
 from loguru import logger
+from pathlib import Path
 from sentence_transformers import util, SentenceTransformer
+from typing import Dict, Any
 
 from config import conf
 
@@ -151,4 +151,5 @@ class ContextPreselector(object):
         corpus_ids = self.symmetric_embeddings[dataset]['corpus_ids']
         top_k_matches = {str(corpus_ids[hit['corpus_id']]): hit['score'] for hit in hits[:k]}
         logger.info(f"Retrieving top-{k} relevant images with exact={exact} took {time.time() - start}s")
+        # TODO add option to return the caption texts -> load the dataset dataframes and return the caps by id
         return top_k_matches

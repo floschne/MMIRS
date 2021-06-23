@@ -115,10 +115,10 @@ class PyHttpImageServer(ImageServer):
         # the wra plots get registered in the WRAPlotter, so we do not have to link them again
         return url.urljoin(self._base_url, self.wra_plot_filename_cache[img_id])
 
-    def get_img_urls(self, img_ids: str, dataset: str, annotated: bool = False) -> List[str]:
+    def get_img_urls(self, img_ids: List[str], dataset: str, annotated: bool = False) -> List[str]:
         return [self.get_img_url(img_id, dataset, annotated) for img_id in img_ids]
 
-    def get_wra_urls(self, img_ids: str) -> List[str]:
+    def get_wra_urls(self, img_ids: List[str]) -> List[str]:
         return [self.get_wra_url(img_id) for img_id in img_ids]
 
     def get_image_path(self, img_id: str, dataset: str) -> str:

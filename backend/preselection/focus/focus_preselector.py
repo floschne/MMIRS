@@ -1,12 +1,11 @@
 import time
-from typing import Dict, List
 
 import numba
 import numpy as np
-import pandas as pd
 import spacy
 from loguru import logger
 from pymagnitude import Magnitude
+from typing import Dict, List, Optional, Union, Tuple
 
 from backend.preselection import VisualVocab
 from backend.preselection.focus.wtf_idf import WTFIDF
@@ -89,8 +88,15 @@ class FocusPreselector(object):
         return focus_terms
 
     @logger.catch
-    def find_top_k_similar_focus_terms(self, focus: str) -> Dict[str, float]:
-        logger.debug(f"Finding top-{self.top_k_similar} similar focus terms for '{focus}'")
+    def find_top_k_similar_focus_terms(self,
+                                       focus: str,
+                                       top_k_similar: Optional[int] = None,
+                                       max_similar: Optional[int] = None) -> Dict[str, float]:
+        # overwrite if set manually
+        top_k_similar = self.top_k_similar if top_k_similar is None else top_k_similar
+        max_similar = self.max_similar if max_similar is None else max_similar
+
+        logger.debug(f"Finding top-{top_k_similar} similar focus terms for '{focus}'")
         focus_terms = self.pre_process_focus(focus)
 
         # term -> similarity as weight
@@ -101,11 +107,11 @@ class FocusPreselector(object):
         # then keep the top-k and add the term-similarity pairs to the similar terms mapping
         for ft in focus_terms:
             sims = self.magnitude.similarity(ft, self.vocab.full_vocab)
-            similar_terms.update({self.vocab[idx]: sim for idx, sim in zip(np.argsort(sims)[-self.top_k_similar:][::-1],
-                                                                           sorted(sims)[-self.top_k_similar:][::-1])})
-        # sort by similarity and keep only top-k
+            similar_terms.update({self.vocab[idx]: sim for idx, sim in zip(np.argsort(sims)[-top_k_similar:][::-1],
+                                                                           sorted(sims)[-top_k_similar:][::-1])})
+        # sort by similarity and keep only max_similar
         similar_terms = {k: min(v, 1.) for k, v in
-                         sorted(similar_terms.items(), key=lambda i: i[1], reverse=True)[:self.max_similar]}
+                         sorted(similar_terms.items(), key=lambda i: i[1], reverse=True)[:max_similar]}
 
         logger.debug(f"Found {len(similar_terms)} similar focus terms: {similar_terms}")
         return similar_terms
@@ -114,7 +120,11 @@ class FocusPreselector(object):
     def retrieve_top_k_relevant_images(self, focus: str,
                                        dataset: str,
                                        k: int = 100,
-                                       weight_by_sim: bool = False) -> Dict[str, float]:
+                                       weight_by_sim: bool = False,
+                                       top_k_similar: Optional[int] = None,
+                                       max_similar: Optional[int] = None,
+                                       return_similar_terms: Optional[bool] = False) -> \
+            Union[Tuple[Dict[str, float], List[str]], Dict[str, float]]:
         logger.debug(f"Retrieving top-{k} relevant images in dataset {dataset} for focus term {focus}")
         if dataset not in self.wtf_idf:
             logger.error(f"WTF-IDF Index for dataset {dataset} not available!")
@@ -123,7 +133,9 @@ class FocusPreselector(object):
         wtf_idf = self.wtf_idf[dataset]
 
         start = time.time()
-        similar_terms = self.find_top_k_similar_focus_terms(focus)
+        similar_terms = self.find_top_k_similar_focus_terms(focus=focus,
+                                                            top_k_similar=top_k_similar,
+                                                            max_similar=max_similar)
         logger.debug(f"get_top_k_similar_terms took {time.time() - start}s")
 
         # remove terms which are not in the index
@@ -161,9 +173,11 @@ class FocusPreselector(object):
         logger.debug(f"sort descending took {time.time() - start}s")
 
         # return dict
-        entries = entries[:k].to_dict()['wtf_idf']
-
-        return entries
+        entries_dict: Dict[str, float] = entries[:k].to_dict()['wtf_idf']
+        if return_similar_terms:
+            return entries_dict, list(similar_terms.keys())
+        else:
+            return entries_dict
 
     # naive implementation way to slow (86s for a three token focus word)
     # @logger.catch(reraise=True)

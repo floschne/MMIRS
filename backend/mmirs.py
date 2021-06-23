@@ -1,5 +1,5 @@
 from loguru import logger
-from typing import List, Tuple, Set, Union
+from typing import List, Tuple, Set, Union, Optional
 
 # from api.model import RetrievalRequest
 from backend.fineselection import FineSelectionStage
@@ -114,29 +114,46 @@ class MMIRS(object):
                                         focus: str,
                                         dataset: str,
                                         k: int = 100,
-                                        weight_by_sim: bool = False) -> List[str]:
+                                        weight_by_sim: bool = False,
+                                        top_k_similar: Optional[int] = None,
+                                        max_similar: Optional[int] = None,
+                                        return_similar_terms: Optional[bool] = False) -> \
+            Union[Tuple[List[str], List[str]], List[str]]:
         """
         Retrieves the top-k matching images according to the focus from the PSS
         """
 
         # find relevant images via PreselectionStage
-        top_k_img_ids = self.pss.retrieve_top_k_focus_relevant_images(focus=focus,
-                                                                      dataset=dataset,
-                                                                      k=k,
-                                                                      weight_by_sim=weight_by_sim)
+        focus_relevant = self.pss.retrieve_top_k_focus_relevant_images(focus=focus,
+                                                                       dataset=dataset,
+                                                                       k=k,
+                                                                       weight_by_sim=weight_by_sim,
+                                                                       top_k_similar=top_k_similar,
+                                                                       max_similar=max_similar,
+                                                                       return_similar_terms=return_similar_terms)
+
+        if return_similar_terms:
+            top_k_image_ids = list(focus_relevant[0].keys())
+            similar_terms = focus_relevant[1]
+        else:
+            top_k_image_ids = list(focus_relevant[0].keys())
+            similar_terms = None
 
         # FIXME do this elsewhere!
         if dataset == 'coco':
             fixed_tk = []
-            for tk in top_k_img_ids:
+            for tk in top_k_image_ids:
                 while len(str(tk)) != 6:
                     tk = '0' + tk
                 fixed_tk.append(tk)
-            top_k_img_ids = fixed_tk
+            top_k_image_ids = fixed_tk
 
         # get URLs
-        top_k_img_urls = self.img_srv.get_img_urls(top_k_img_ids, dataset, annotated=False)
-        return top_k_img_urls
+        top_k_img_urls = self.img_srv.get_img_urls(top_k_image_ids, dataset, annotated=False)
+        if return_similar_terms:
+            return top_k_img_urls, similar_terms
+        else:
+            return top_k_img_urls
 
     @staticmethod
     def get_available_image_feature_pools() -> Set[Tuple[str, str]]:

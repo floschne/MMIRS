@@ -115,17 +115,17 @@ class FineSelectionStage(object):
                                                                focus_span=focus_span,
                                                                context_tokens=context_tokens[0])
 
-                for future in as_completed(futures):
-                    iid, dst, task = future.result()
-                    if task == 'anno':
-                        # register annotated image at image server
-                        self.img_server.register_annotated_image(img_id=iid,
-                                                                 dataset=dataset,
-                                                                 annotated_image_path=dst)
-                    elif task == 'wra_plot':
-                        # register wra plot at image server
-                        self.img_server.register_wra_plot(img_id=iid, wra_plot_path=dst)
-                    else:
-                        raise ValueError(f"Task {task} is unknown!")
+            for future in as_completed(futures):
+                iid, dst, task = future.result()
+                if task == 'anno':
+                    # register annotated image at image server
+                    self.img_server.register_annotated_image(img_id=iid,
+                                                             dataset=dataset,
+                                                             annotated_image_path=dst)
+                elif task == 'wra_plot':
+                    # register wra plot at image server
+                    self.img_server.register_wra_plot(img_id=iid, wra_plot_path=dst)
+                else:
+                    raise ValueError(f"Task {task} is unknown!")
 
         return top_k_image_ids

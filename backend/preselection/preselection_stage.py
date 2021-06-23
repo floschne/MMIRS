@@ -3,7 +3,7 @@ import time
 
 from enum import Enum, unique
 from loguru import logger
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple, Union
 
 from backend.preselection import ContextPreselector
 from backend.preselection import FocusPreselector
@@ -79,12 +79,23 @@ class PreselectionStage(object):
         logger.debug(f"ContextPreselector took: {time.time() - start}s")
         return context_relevant
 
-    def retrieve_top_k_focus_relevant_images(self, focus: str, dataset: str, k: int = 100, weight_by_sim: bool = False):
+    def retrieve_top_k_focus_relevant_images(self,
+                                             focus: str,
+                                             dataset: str,
+                                             k: int = 100,
+                                             weight_by_sim: bool = False,
+                                             top_k_similar: Optional[int] = None,
+                                             max_similar: Optional[int] = None,
+                                             return_similar_terms: Optional[bool] = False) -> \
+            Union[Tuple[Dict[str, float], List[str]], Dict[str, float]]:
         start = time.time()
         focus_relevant = self.__focus_preselector.retrieve_top_k_relevant_images(focus,
                                                                                  k=k,
                                                                                  dataset=dataset,
-                                                                                 weight_by_sim=weight_by_sim)
+                                                                                 weight_by_sim=weight_by_sim,
+                                                                                 top_k_similar=top_k_similar,
+                                                                                 max_similar=max_similar,
+                                                                                 return_similar_terms=return_similar_terms)
         logger.debug(f"FocusPreselector took: {time.time() - start}s")
 
         return focus_relevant

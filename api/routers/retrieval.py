@@ -32,7 +32,7 @@ async def top_k_images(req: RetrievalRequest) -> JSONResponse:
 @router.post('/pss/top_k_context',
              tags=TAGS,
              description='Retrieve the top-k context related images from the PreselectionStage')
-async def top_k_images(req: PSSContextRetrievalRequest) -> JSONResponse:
+async def top_k_context(req: PSSContextRetrievalRequest) -> JSONResponse:
     logger.info(f"POST request on {PREFIX}/pss/top_k_context with req: {req}")
     start = time.time()
     urls = MMIRS().pss_retrieve_top_k_context_images(context=req.context,
@@ -46,13 +46,16 @@ async def top_k_images(req: PSSContextRetrievalRequest) -> JSONResponse:
 @router.post('/pss/top_k_focus',
              tags=TAGS,
              description='Retrieve the top-k focus related images from the PreselectionStage')
-async def top_k_images(req: PSSFocusRetrievalRequest) -> JSONResponse:
+async def top_k_focus(req: PSSFocusRetrievalRequest) -> JSONResponse:
     logger.info(f"POST request on {PREFIX}/pss/top_k_context with req: {req}")
     start = time.time()
     urls = MMIRS().pss_retrieve_top_k_focus_images(focus=req.focus,
                                                    dataset=req.dataset,
                                                    k=req.top_k,
-                                                   weight_by_sim=req.weight_by_sim)
+                                                   weight_by_sim=req.weight_by_sim,
+                                                   top_k_similar=req.top_k_similar_terms,
+                                                   max_similar=req.max_similar_terms,
+                                                   return_similar_terms=req.return_similar_terms)
     logger.info(f"MMIR execution took: {time.time() - start}")
     return JSONResponse(content=urls)
 
