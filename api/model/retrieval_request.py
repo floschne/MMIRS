@@ -65,4 +65,7 @@ class RetrievalRequest(BaseModel):
     def context_must_not_be_empty(cls, context: str):
         if context is None or len(context) == 0:
             raise ValueError("Context must not be empty!")
+        # fixme hacky
+        if context[-1] != '.':
+            context += '.'
         return context
