@@ -16,16 +16,19 @@ image_server:
       image_prefix: ''
       image_suffix: .jpg
 
-  lighttp:
-    https: false
-    host: localhost
-    port: 8082
-    context_path: /
+
+  # ---- not supported anymore! ----
+  #  lighttp:
+  #    https: false
+  #    host: localhost
+  #    port: 10162
+  #    context_path: /
+
 
   pyhttp:
     https: false
     host: localhost
-    port: 8082
+    port: 10162
     context_path: /
     link_root_dir: /srv/7schneid/mmirs_pyhttp_link_root
     flush_link_dir: True
@@ -110,16 +113,16 @@ fine_selection:
         pre_fetch: False
 
   retrievers:
-#    uniter_base:
-#      retriever_type: uniter
-#      n_gpu: 1
-#      uniter_dir: ${env:UNITER_DATA_DIR}
-#      model_config: /srv/7schneid/MMIR/models/uniter/config/uniter-base.json
-#      num_imgs: 1000
-#      batch_size: 50
-#      n_data_workers: 0
-#      fp16: True
-#      pin_mem: True
+    #    uniter_base:
+    #      retriever_type: uniter
+    #      n_gpu: 1
+    #      uniter_dir: ${env:UNITER_DATA_DIR}
+    #      model_config: /srv/7schneid/MMIR/models/uniter/config/uniter-base.json
+    #      num_imgs: 1000
+    #      batch_size: 50
+    #      n_data_workers: 0
+    #      fp16: True
+    #      pin_mem: True
 
     teran_coco:
       retriever_type: teran

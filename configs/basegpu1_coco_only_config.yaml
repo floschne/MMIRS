@@ -8,16 +8,17 @@ image_server:
       image_prefix: COCO_000000
       image_suffix: .jpg
 
-  lighttp:
-    https: false
-    host: localhost
-    port: 8082
-    context_path: /
+# ---- not supported anymore! ----
+#  lighttp:
+#    https: false
+#    host: localhost
+#    port: 10162
+#    context_path: /
 
   pyhttp:
     https: false
     host: localhost
-    port: 8082
+    port: 10162
     context_path: /
     link_root_dir: /srv/7schneid/mmirs_pyhttp_link_root
     flush_link_dir: True
