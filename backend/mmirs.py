@@ -136,7 +136,7 @@ class MMIRS(object):
             top_k_image_ids = list(focus_relevant[0].keys())
             similar_terms = focus_relevant[1]
         else:
-            top_k_image_ids = list(focus_relevant[0].keys())
+            top_k_image_ids = list(focus_relevant.keys())
             similar_terms = None
 
         # FIXME do this elsewhere!
