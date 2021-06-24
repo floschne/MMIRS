@@ -39,9 +39,6 @@ class ImageFeaturePool(object):
         self.pre_fetch = pre_fetch
         self.data = None
 
-        if pre_fetch:
-            self.load_data_into_memory()
-
     @abstractmethod
     def load_data_into_memory(self):
         raise NotImplementedError()

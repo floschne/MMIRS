@@ -34,6 +34,8 @@ class TeranImageFeaturePool(ImageFeaturePool):
                                                    pre_fetch_in_memory=False,
                                                    fn_prefix=fn_prefix,
                                                    num_pre_fetch_workers=num_workers)
+        if pre_fetch:
+            self.load_data_into_memory()
 
     def load_data_into_memory(self):
         self.data.fetch_img_embs()
