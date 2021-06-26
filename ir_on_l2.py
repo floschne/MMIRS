@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     # setup and build image pools
     pool_factory = ImageFeaturePoolFactory()
-    pool = pool_factory.create_or_get_pool(opts.dataset, retriever.retriever_type)
+    pool = pool_factory.create_or_get_pool(opts.dataset, retriever.retriever_name)
 
     # build and load the image search space (into memory!) containing ALL IMAGES OF THE POOL!
     iss = pool.get_image_search_space(img_ids=None)

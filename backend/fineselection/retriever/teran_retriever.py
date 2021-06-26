@@ -58,13 +58,14 @@ class TeranRetriever(Retriever):
 
         # compute the matching scores
         wra_matrices: np.ndarray  # type hint. shape: (k, num_roi, num_tok)
-        global_scores: np.ndarray  # type hint. shape: (k)
-        global_scores, wra_matrices = compute_distances(img_embs,
-                                                        query_embs,
-                                                        img_length,
-                                                        query_lengths,
-                                                        self.model_config,
-                                                        return_wra_matrices=True)
+        global_similarity_scores: np.ndarray  # type hint. shape: (k)
+
+        global_similarity_scores, wra_matrices = compute_distances(img_embs,
+                                                                   query_embs,
+                                                                   img_length,
+                                                                   query_lengths,
+                                                                   self.model_config,
+                                                                   return_wra_matrices=True)
 
         # compute the matching scores wrt the focus
         focus_scores = self.compute_focus_scores(focus=focus,
@@ -73,12 +74,12 @@ class TeranRetriever(Retriever):
                                                  focus_pooling='avg')
 
         # compute the combined scores
-        combined_scores = self.compute_combined_scores(global_scores=global_scores,
+        combined_scores = self.compute_combined_scores(global_scores=global_similarity_scores,
                                                        focus_scores=focus_scores,
                                                        alpha=focus_weight)
 
         # argsort to get the indices of the images
-        context_sorted_indices = np.argsort(global_scores)[::-1][:top_k]
+        context_sorted_indices = np.argsort(global_similarity_scores)[::-1][:top_k]
         focus_sorted_indices = np.argsort(focus_scores)[::-1][:top_k]
         combined_sorted_indices = np.argsort(combined_scores)[::-1][:top_k]
 
@@ -96,7 +97,7 @@ class TeranRetriever(Retriever):
         if return_scores:
             return_dict['scores'] = {'combined': combined_scores[combined_sorted_indices]}
             if return_separated_ranks:
-                return_dict['scores']['context'] = global_scores[context_sorted_indices]
+                return_dict['scores']['context'] = global_similarity_scores[context_sorted_indices]
                 return_dict['scores']['focus'] = focus_scores[focus_sorted_indices]
 
         if return_wra_matrices:

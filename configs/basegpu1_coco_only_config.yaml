@@ -1,6 +1,10 @@
 api:
   port: 10161
 
+logging:
+  max_file_size: 500 # MB
+  level: DEBUG
+
 image_server:
   datasources:
     coco:
@@ -69,9 +73,19 @@ fine_selection:
   max_workers: 32
 
   feature_pools:
-    coco:
-      teran:
+    coco: # dataset
+      teran_coco: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
         feats_root: /srv/7schneid/datasets/coco/pre_computed_embeddings
+        fn_prefix: COCO_000000
+        num_workers: 32
+        pre_fetch: False
+      teran_wicsmmir: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /srv/7schneid/datasets/coco/pre_computed_embeddings_wicsmmir_v2
+        fn_prefix: COCO_000000
+        num_workers: 32
+        pre_fetch: False
+      teran_f30k: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /srv/7schneid/datasets/coco/pre_computed_embeddings_f30k
         fn_prefix: COCO_000000
         num_workers: 32
         pre_fetch: False
@@ -103,6 +117,7 @@ mmirs:
     max_num_context_relevant: 5000
     max_num_focus_relevant: 5000
     max_num_relevant: 10000
+    min_num_relevant: 1000
     focus_weight_by_sim: False
     exact_context_retrieval: False
 

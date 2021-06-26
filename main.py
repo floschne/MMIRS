@@ -9,11 +9,10 @@ from backend.fineselection import FineSelectionStage
 from backend.imgserver.py_http_image_server import PyHttpImageServer
 from config import conf
 
-# start MMIRS
-MMIRS()
-
-# create the main app
-app = FastAPI()
+# create the main api
+app = FastAPI(title="User Study API",
+              description="Simple API that powers my Master Thesis' user study.",
+              version="beta")
 
 
 @logger.catch(reraise=True)
@@ -24,6 +23,16 @@ def shutdown_event():
         FineSelectionStage().shutdown()
     except:
         pass
+
+
+@logger.catch(reraise=True)
+@app.on_event("startup")
+def startup_event():
+    # setup logger
+    logger.add('logs/{time}.log', rotation=f"{conf.logging.max_file_size} MB", level=conf.logging.level.upper())
+
+    # start MMIRS
+    MMIRS()
 
 
 # include the routers

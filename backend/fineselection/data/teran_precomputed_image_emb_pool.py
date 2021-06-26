@@ -11,7 +11,7 @@ sys.path.append(TERAN_PATH)
 from data import PreComputedImageEmbeddingsData
 
 
-class TeranImageFeaturePool(ImageFeaturePool):
+class TeranPrecomputedImageEmbeddingsPool(ImageFeaturePool):
 
     def __init__(self,
                  source_dataset: str,
@@ -51,7 +51,7 @@ class TeranImageFeaturePool(ImageFeaturePool):
                 #  There the leading 0 get removed because the id's are stored as integers)
 
                 # FIXME filter the duplicates that are induced from the merge op (or the datasource! see comment in PSS)
-                img_ids = list(set([TeranImageFeaturePool.fill_leading_coco_zeros(img_id) for img_id in img_ids]))
+                img_ids = list(set([TeranPrecomputedImageEmbeddingsPool.fill_leading_coco_zeros(img_id) for img_id in img_ids]))
 
             subset = self.data.get_subset(image_ids=img_ids, pre_fetch_in_memory=True)
         return TeranISS(images=subset)

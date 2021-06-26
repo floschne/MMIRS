@@ -1,6 +1,10 @@
 api:
   port: 10161
 
+logging:
+  max_file_size: 500 # MB
+  level: DEBUG
+
 image_server:
   datasources:
     coco:
@@ -93,21 +97,53 @@ fine_selection:
   max_workers: 32
 
   feature_pools:
-    coco:
-      teran:
+    coco: # dataset
+      teran_coco: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
         feats_root: /srv/7schneid/datasets/coco/pre_computed_embeddings
         fn_prefix: COCO_000000
         num_workers: 32
         pre_fetch: False
+      teran_wicsmmir: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /srv/7schneid/datasets/coco/pre_computed_embeddings_wicsmmir_v2
+        fn_prefix: COCO_000000
+        num_workers: 32
+        pre_fetch: False
+      teran_f30k: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /srv/7schneid/datasets/coco/pre_computed_embeddings_f30k
+        fn_prefix: COCO_000000
+        num_workers: 32
+        pre_fetch: False
+
     wicsmmir:
-      teran:
+      teran_wicsmmir: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
         feats_root: /srv/7schneid/datasets/wicsmmir/v2/pre_computed_embeddings
         fn_prefix: ''
         num_workers: 32
         pre_fetch: False
+      teran_coco: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /srv/7schneid/datasets/wicsmmir/v2/pre_computed_embeddings_coco
+        fn_prefix: ''
+        num_workers: 32
+        pre_fetch: False
+      teran_f30k: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /srv/7schneid/datasets/wicsmmir/v2/pre_computed_embeddings_f30k
+        fn_prefix: ''
+        num_workers: 32
+        pre_fetch: False
+
     f30k:
-      teran:
+      teran_f30k: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
         feats_root: /srv/7schneid/datasets/f30k/pre_computed_embeddings
+        fn_prefix: ''
+        num_workers: 32
+        pre_fetch: False
+      teran_coco: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /srv/7schneid/datasets/f30k/pre_computed_embeddings_coco
+        fn_prefix: ''
+        num_workers: 32
+        pre_fetch: False
+      teran_wicsmmir: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /srv/7schneid/datasets/f30k/pre_computed_embeddings_wicsmmir_v2
         fn_prefix: ''
         num_workers: 32
         pre_fetch: False

@@ -1,7 +1,7 @@
 from loguru import logger
 from typing import Tuple, Set
 
-from backend.fineselection.data import TeranImageFeaturePool, ImageFeaturePool
+from backend.fineselection.data import TeranPrecomputedImageEmbeddingsPool, ImageFeaturePool
 from backend.fineselection.retriever.retriever import RetrieverType
 from config import conf
 
@@ -34,13 +34,15 @@ class ImageFeaturePoolFactory(object):
             return self.pool_cache[(source_dataset, retriever_type)]
 
         pool_conf = self._conf[source_dataset][retriever_type]
-        if retriever_type.lower() == RetrieverType.TERAN:
-            self.pool_cache[(source_dataset, retriever_type)] = TeranImageFeaturePool(source_dataset=source_dataset,
-                                                                                      pre_fetch=pool_conf.pre_fetch,
-                                                                                      feats_root=pool_conf.feats_root,
-                                                                                      fn_prefix=pool_conf.fn_prefix,
-                                                                                      num_workers=pool_conf.num_workers)
-        elif retriever_type.lower() == RetrieverType.UNITER:
+        if RetrieverType.TERAN in retriever_type.lower():
+            pool = TeranPrecomputedImageEmbeddingsPool(source_dataset=source_dataset,
+                                                       pre_fetch=pool_conf.pre_fetch,
+                                                       feats_root=pool_conf.feats_root,
+                                                       fn_prefix=pool_conf.fn_prefix,
+                                                       num_workers=pool_conf.num_workers)
+            self.pool_cache[(source_dataset, retriever_type)] = pool
+
+        elif RetrieverType.UNITER in retriever_type.lower():
             raise NotImplementedError(f"UNITER ImagePools not yet implemented!")
 
         else:
