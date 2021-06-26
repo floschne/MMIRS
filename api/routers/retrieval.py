@@ -66,7 +66,7 @@ async def top_k_focus(req: PSSFocusRetrievalRequest) -> JSONResponse:
 async def get_available_datasets() -> List[Dataset]:
     logger.info(f"GET request on {PREFIX}/available_datasets")
     feat_pools = MMIRS().get_available_image_feature_pools()
-    return [Dataset(name=fp[0], retriever_type=fp[1]) for fp in feat_pools]
+    return [Dataset(name=fp[0], retriever_name=fp[1]) for fp in feat_pools]
 
 
 @router.get('/available_retrievers',

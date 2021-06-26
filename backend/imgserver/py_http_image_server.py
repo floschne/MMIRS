@@ -33,6 +33,7 @@ def http_server_task(http_server_root_dir: str, port: int, host: str):
 
 
 class PyHttpImageServer(ImageServer):
+
     __singleton = None
     _conf = None
 
