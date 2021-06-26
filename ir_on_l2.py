@@ -25,8 +25,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_path',
                         type=str,
-                        default='data/l2/4.manually_selected_testdata/ins_ose_testdata.df.feather',
-                        help='Path to the dataset DataFrame that contains the captions.')
+                        help='Path to the dataset DataFrame that contains the captions.',
+                        required=True)
     parser.add_argument('--image_batch_size', type=int, default=5000)
     parser.add_argument('--retriever_name', type=str, default='teran_wicsmmir',
                         choices=['teran_wicsmmir', 'teran_coco', 'teran_f30k'])
@@ -53,6 +53,7 @@ if __name__ == '__main__':
         # do the retrieval
         res = retriever.find_top_k_images(focus=None,
                                           context=row[1]['caption'],
+                                          focus_weight=0.0,
                                           top_k=50,
                                           iss=iss)
         top_k_results.append(res)
