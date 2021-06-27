@@ -1,5 +1,6 @@
 import os
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from types import SimpleNamespace
 
 import numpy as np
@@ -34,6 +35,8 @@ class TeranRetriever(Retriever):
 
         # load the tokenizer from TERAN
         self.tokenizer = get_tokenizer(teran_config)
+
+        self.dist_pool = ProcessPoolExecutor(max_workers=32)
 
         self.teran = teran
         self.model_config = teran_config
