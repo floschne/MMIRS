@@ -72,7 +72,7 @@ async def get_available_datasets() -> List[Dataset]:
 @router.get('/available_retrievers',
             tags=TAGS,
             description='Returns the available retrievers.')
-async def get_available_datasets() -> List[Retriever]:
+async def get_available_retrievers() -> List[Retriever]:
     logger.info(f"GET request on {PREFIX}/available_retrievers")
     rets = MMIRS().get_available_retrievers()
     return [Retriever(name=ret) for ret in rets]
