@@ -70,7 +70,7 @@ class FineSelectionStage(object):
         retriever = self.retriever_factory.create_or_get_retriever(retriever_name)
 
         # get the image pool for the selected dataset and retriever
-        pool = self.pool_factory.create_or_get_pool(source_dataset=dataset, retriever_type=retriever.retriever_type)
+        pool = self.pool_factory.create_or_get_pool(source_dataset=dataset, retriever_name=retriever.retriever_name)
 
         # build and load the image search space (into memory!) containing the preselected images
         iss = pool.get_image_search_space(preselected_image_ids)

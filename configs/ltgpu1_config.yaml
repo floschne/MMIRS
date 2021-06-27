@@ -1,25 +1,41 @@
 api:
   port: 10161
 
+logging:
+  max_file_size: 500 # MB
+  level: DEBUG
+
 image_server:
-  lighttp:
+  datasources:
+    coco:
+      images_root: /raid/7schneid/datasets/coco/images
+      image_prefix: COCO_000000
+      image_suffix: .jpg
+    wicsmmir:
+      images_root: /raid/7schneid/datasets/wicsmmir/images
+      image_prefix: wikicaps_
+      image_suffix: .png
+    f30k:
+      images_root: /raid/7schneid/datasets/f30k/images
+      image_prefix: ''
+      image_suffix: .jpg
+
+
+  # ---- not supported anymore! ----
+  #  lighttp:
+  #    https: false
+  #    host: localhost
+  #    port: 10162
+  #    context_path: /
+
+
+  pyhttp:
     https: false
     host: localhost
-    port: 8082
+    port: 10162
     context_path: /
-    datasources:
-      coco:
-        images_root: /raid/datasets/coco/images
-        image_prefix: COCO_000000
-        image_suffix: .png
-      wicsmmir:
-        images_root: /raid/datasets/wicsmmir/images
-        image_prefix: wikicaps_
-        image_suffix: .png
-      f30k:
-        images_root: /raid/datasets/f30k/images
-        image_prefix: ''
-        image_suffix: .jpg
+    link_root_dir: /raid/7schneid/mmirs_pyhttp_link_root
+    flush_link_dir: True
 
 preselection:
   focus:
@@ -66,49 +82,83 @@ preselection:
         - wicsmmir: data/sembs/wicsmmir_asym_embs.pkl
         - coco: data/sembs/coco_asymm_embs.pkl
         - f30k: data/sembs/f30k_asymm_embs.pkl
-      faiss:
-        symmetric_indices:
-          - wicsmmir: data/faiss/wicsmmir_symm.faiss
-          - coco: data/faiss/coco_symm.faiss
-          - f30k: data/faiss/f30k_symm.faiss
-        asymmetric_indices:
-          - wicsmmir: data/faiss/wicsmmir_asym.faiss
-          - coco: data/faiss/cooc_asym.faiss
-          - f30k: data/faiss/f30k_asymm.faiss
-        nprobe: 350  # Number of VCs to explorer at search time (tradeoff between search accuracy and search time)
+    faiss:
+      symmetric_indices:
+        - wicsmmir: data/faiss/wicsmmir_symm.faiss
+        - coco: data/faiss/coco_symm.faiss
+        - f30k: data/faiss/f30k_symm.faiss
+      asymmetric_indices:
+        - wicsmmir: data/faiss/wicsmmir_asym.faiss
+        - coco: data/faiss/cooc_asym.faiss
+        - f30k: data/faiss/f30k_asymm.faiss
+      nprobe: 350  # Number of VCs to explorer at search time (tradeoff between search accuracy and search time)
 
 fine_selection:
+  max_workers: 32
+
   feature_pools:
-    coco:
-      teran:
-        data_root: /raid/datasets/coco/pre_computed_embeddings
+    coco: # dataset
+      teran_coco: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /raid/7schneid/datasets/coco/pre_computed_embeddings
         fn_prefix: COCO_000000
         num_workers: 32
         pre_fetch: False
+      teran_wicsmmir: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /raid/7schneid/datasets/coco/pre_computed_embeddings_wicsmmir_v2
+        fn_prefix: COCO_000000
+        num_workers: 32
+        pre_fetch: False
+      teran_f30k: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /raid/7schneid/datasets/coco/pre_computed_embeddings_f30k
+        fn_prefix: COCO_000000
+        num_workers: 32
+        pre_fetch: False
+
     wicsmmir:
-      teran:
-        data_root: /raid/7schneid/datasets/wicsmmir/v2/pre_computed_embeddings
+      teran_wicsmmir: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /raid/7schneid/datasets/wicsmmir/v2/pre_computed_embeddings
         fn_prefix: ''
         num_workers: 32
         pre_fetch: False
+      teran_coco: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /raid/7schneid/datasets/wicsmmir/v2/pre_computed_embeddings_coco
+        fn_prefix: ''
+        num_workers: 32
+        pre_fetch: False
+      teran_f30k: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /raid/7schneid/datasets/wicsmmir/v2/pre_computed_embeddings_f30k
+        fn_prefix: ''
+        num_workers: 32
+        pre_fetch: False
+
     f30k:
-      teran:
-        data_root: /raid/7schneid/datasets/f30k/pre_computed_embeddings
+      teran_f30k: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /raid/7schneid/datasets/f30k/pre_computed_embeddings
+        fn_prefix: ''
+        num_workers: 32
+        pre_fetch: False
+      teran_coco: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /raid/7schneid/datasets/f30k/pre_computed_embeddings_coco
+        fn_prefix: ''
+        num_workers: 32
+        pre_fetch: False
+      teran_wicsmmir: # teran retriever name that precomputed the image embeddings. must match the retrievers from retriever section
+        feats_root: /raid/7schneid/datasets/f30k/pre_computed_embeddings_wicsmmir_v2
         fn_prefix: ''
         num_workers: 32
         pre_fetch: False
 
   retrievers:
-    uniter_base:
-      retriever_type: uniter
-      n_gpu: 1
-      uniter_dir: ${env:UNITER_DATA_DIR}
-      model_config: /raid/7schneid/MMIR/models/uniter/config/uniter-base.json
-      num_imgs: 1000
-      batch_size: 50
-      n_data_workers: 0
-      fp16: True
-      pin_mem: True
+    #    uniter_base:
+    #      retriever_type: uniter
+    #      n_gpu: 1
+    #      uniter_dir: ${env:UNITER_DATA_DIR}
+    #      model_config: /raid/7schneid/MMIR/models/uniter/config/uniter-base.json
+    #      num_imgs: 1000
+    #      batch_size: 50
+    #      n_data_workers: 0
+    #      fp16: True
+    #      pin_mem: True
 
     teran_coco:
       retriever_type: teran
@@ -130,11 +180,38 @@ fine_selection:
       model_config: configs/teran_f30k_MrSw_IR.yaml
 
 
+  max_focus_annotator:
+    datasources:
+      coco:
+        bbox_root: /raid/7schneid/datasets/coco/features_36/bua
+        fn_prefix: COCO_000000
+        fn_suffix: .npz
+
+      f30k:
+        bbox_root: /raid/7schneid/datasets/f30k/features_36/bua
+        fn_prefix:
+        fn_suffix: .npz
+
+      wicsmmir:
+        bbox_root: /raid/7schneid/datasets/wicsmmir/features_36
+        fn_prefix: wikicaps_
+        fn_suffix: .npz
+
+    annotated_images_dst: /raid/7schneid/mmirs_annotated_images_dst
+
+  wra_plotter:
+    wra_plots_dst: /raid/7schneid/mmirs_wra_images_dst
+    cell_size_px: 40
+
+
 mmirs:
   pss:
     merge_op: intersection
     max_num_context_relevant: 5000
     max_num_focus_relevant: 5000
     max_num_relevant: 10000
+    min_num_relevant: 1000
     focus_weight_by_sim: False
     exact_context_retrieval: False
+
+  img_server: pyhttp
