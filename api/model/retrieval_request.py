@@ -25,6 +25,8 @@ class RetrievalRequest(BaseModel):
                                           default=False)
     return_wra_matrices: Optional[bool] = Field(description="If true the WRA matrices of the top-k images are returned",
                                                 default=False)
+    return_timings: Optional[bool] = Field(description="If true timings of the operation are returned",
+                                           default=False)
 
     @root_validator
     def focus_must_exist_in_context(cls, values):

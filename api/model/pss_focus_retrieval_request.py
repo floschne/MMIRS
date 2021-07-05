@@ -15,6 +15,8 @@ class PSSFocusRetrievalRequest(BaseModel):
         default=None)
     return_similar_terms: Optional[bool] = Field(description="If true, the similar focus terms are returned!",
                                                  default=False)
+    return_timings: Optional[bool] = Field(description="If true timings of the operation are returned",
+                                           default=False)
 
     @validator('focus')
     def focus_must_not_be_empty(cls, focus: str):

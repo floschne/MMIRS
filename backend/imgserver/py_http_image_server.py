@@ -10,6 +10,7 @@ from typing import List
 
 from backend.imgserver.image_server import ImageServer
 # TODO improve architecture wrt ImageServer superclass -> datasource instantiation
+from backend.util.mmirs_timer import MMIRSTimer
 from config import conf
 
 
@@ -64,7 +65,7 @@ class PyHttpImageServer(ImageServer):
                                           http_server_root_dir=cls.__link_root_dir,
                                           port=cls._conf.port,
                                           host=cls._conf.host)
-
+            cls.timer = MMIRSTimer()
         return cls.__singleton
 
     # noinspection PyUnresolvedReferences,PyProtectedMember
@@ -117,10 +118,16 @@ class PyHttpImageServer(ImageServer):
         return url.urljoin(self._base_url, self.wra_plot_filename_cache[img_id])
 
     def get_img_urls(self, img_ids: List[str], dataset: str, annotated: bool = False) -> List[str]:
-        return [self.get_img_url(img_id, dataset, annotated) for img_id in img_ids]
+        self.timer.start_measurement("PyHttpImageServer::get_img_urls")
+        urls = [self.get_img_url(img_id, dataset, annotated) for img_id in img_ids]
+        self.timer.stop_measurement()
+        return urls
 
     def get_wra_urls(self, img_ids: List[str]) -> List[str]:
-        return [self.get_wra_url(img_id) for img_id in img_ids]
+        self.timer.start_measurement("PyHttpImageServer::get_img_urls")
+        urls = [self.get_wra_url(img_id) for img_id in img_ids]
+        self.timer.stop_measurement()
+        return urls
 
     def get_image_path(self, img_id: str, dataset: str) -> str:
         if dataset not in self.datasources:

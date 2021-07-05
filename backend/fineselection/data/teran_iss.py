@@ -5,6 +5,7 @@ import numpy as np
 import torch
 
 from backend.fineselection.data import ImageSearchSpace
+from backend.util.mmirs_timer import MMIRSTimer
 
 TERAN_PATH = 'models/teran'
 sys.path.append(TERAN_PATH)
@@ -18,8 +19,10 @@ class TeranISS(ImageSearchSpace):
 
         self.cached_img_embs = None
         self.cached_img_lengths = None
+        self.timer = MMIRSTimer()
 
     def get_images(self) -> Tuple[torch.Tensor, int]:
+        self.timer.start_measurement("TeranISS::get_images")
         if self.cached_img_embs is None:
             # get the img embeddings and convert them to Tensors
             np_img_embs = np.array(list(self.images.img_embs.values()))
@@ -28,7 +31,7 @@ class TeranISS(ImageSearchSpace):
             img_lengths = len(np_img_embs[0])
             self.cached_img_embs = img_embs
             self.cached_img_lengths = img_lengths
-
+        self.timer.stop_measurement()
         return self.cached_img_embs, self.cached_img_lengths
 
     def get_image_id(self, idx: int) -> Union[str, int]:

@@ -1,5 +1,4 @@
 import random
-import time
 
 from enum import Enum, unique
 from loguru import logger
@@ -7,6 +6,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from backend.preselection import ContextPreselector
 from backend.preselection import FocusPreselector
+from backend.util.mmirs_timer import MMIRSTimer
 from config import conf
 
 
@@ -29,14 +29,17 @@ class PreselectionStage(object):
 
             cls._conf = conf.preselection
 
+            cls.timer = MMIRSTimer()
+
         return cls.__singleton
 
-    @staticmethod
-    def __merge_relevant_images(focus: Dict[str, float],
+    def __merge_relevant_images(self,
+                                focus: Dict[str, float],
                                 context: Dict[str, float],
                                 max_num_relevant: int,
                                 min_num_relevant: int = 500,  # TODO do we want this?! what is a good number?
                                 merge_op: MergeOp = MergeOp.INTERSECTION) -> List[str]:
+        self.timer.start_measurement('PSS::merge_relevant_images')
         logger.debug(f"Merging with {merge_op}")
 
         # FIXME - when using coco, there are some image ids where the leading 0s are missing
@@ -68,15 +71,16 @@ class PreselectionStage(object):
             random.shuffle(merged)
             return merged[:max_num_relevant]
 
+        self.timer.stop_measurement()
         return merged
 
     def retrieve_top_k_context_relevant_images(self, context: str, dataset: str, k: int = 100, exact: bool = False):
-        start = time.time()
+        self.timer.start_measurement('PSS::retrieve_top_k_context_relevant_images')
         context_relevant = self.__context_preselector.retrieve_top_k_relevant_images(context,
                                                                                      k=k,
                                                                                      dataset=dataset,
                                                                                      exact=exact)
-        logger.debug(f"ContextPreselector took: {time.time() - start}s")
+        self.timer.stop_measurement()
         return context_relevant
 
     def retrieve_top_k_focus_relevant_images(self,
@@ -88,7 +92,7 @@ class PreselectionStage(object):
                                              max_similar: Optional[int] = None,
                                              return_similar_terms: Optional[bool] = False) -> \
             Union[Tuple[Dict[str, float], List[str]], Dict[str, float]]:
-        start = time.time()
+        self.timer.start_measurement('PSS::retrieve_top_k_focus_relevant_images')
         focus_relevant = self.__focus_preselector.retrieve_top_k_relevant_images(focus,
                                                                                  k=k,
                                                                                  dataset=dataset,
@@ -96,7 +100,7 @@ class PreselectionStage(object):
                                                                                  top_k_similar=top_k_similar,
                                                                                  max_similar=max_similar,
                                                                                  return_similar_terms=return_similar_terms)
-        logger.debug(f"FocusPreselector took: {time.time() - start}s")
+        self.timer.stop_measurement()
 
         return focus_relevant
 
@@ -111,6 +115,7 @@ class PreselectionStage(object):
                                  focus_weight_by_sim: bool = False,
                                  exact_context_retrieval: bool = False) -> List[str]:
 
+        self.timer.start_measurement('PSS::retrieve_relevant_images')
         # TODO do this in two parallel threads!
         context_relevant = self.retrieve_top_k_context_relevant_images(context=context,
                                                                        dataset=dataset,
@@ -122,11 +127,10 @@ class PreselectionStage(object):
                                                                    k=max_num_focus_relevant,
                                                                    weight_by_sim=focus_weight_by_sim)
 
-        start = time.time()
         merged = self.__merge_relevant_images(focus=focus_relevant,
                                               context=context_relevant,
                                               max_num_relevant=max_num_relevant,
                                               merge_op=merge_op)
-        logger.debug(f"Merging took: {time.time() - start}s")
+        self.timer.stop_measurement()
 
         return merged

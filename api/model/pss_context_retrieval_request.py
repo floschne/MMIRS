@@ -9,6 +9,8 @@ class PSSContextRetrievalRequest(BaseModel):
     exact: Optional[bool] = Field(
         description="If true, instead of ANN search with FAISS, exact search via SBert is used to find best matching context. Takes more time!",
         default=False)
+    return_timings: Optional[bool] = Field(description="If true timings of the operation are returned",
+                                           default=False)
 
     @validator('context')
     def context_must_not_be_empty(cls, context: str):

@@ -10,6 +10,7 @@ from backend.fineselection.plot.max_focus_region_annotator import MaxFocusRegion
 from backend.fineselection.plot.wra_plotter import WRAPlotter
 from backend.fineselection.retriever import RetrieverFactory
 from backend.imgserver.py_http_image_server import PyHttpImageServer
+from backend.util.mmirs_timer import MMIRSTimer
 from config import conf
 
 
@@ -47,6 +48,8 @@ class FineSelectionStage(object):
             # init worker pool
             cls.worker_pool = ProcessPoolExecutor(max_workers=conf.fine_selection.max_workers)
 
+            cls.timer = MMIRSTimer()
+
         return cls.__singleton
 
     def shutdown(self):
@@ -65,7 +68,7 @@ class FineSelectionStage(object):
                           focus_weight: float = 0.5,
                           return_scores: bool = False,
                           return_wra_matrices: bool = False):
-
+        self.timer.start_measurement("FSS::find_top_k_images")
         # get the retriever
         retriever = self.retriever_factory.create_or_get_retriever(retriever_name)
 
@@ -91,6 +94,7 @@ class FineSelectionStage(object):
 
         top_k_image_ids = result_dict['top_k'][ranked_by.value]
 
+        self.timer.start_measurement("FSS::annotate_max_focus_region_and_plot_wra")
         if annotate_max_focus_region or return_wra_matrices:
             wra_matrices: np.ndarray = result_dict['wra'][ranked_by.value]
             focus_span = retriever.find_focus_span_in_context(context=context, focus=focus)
@@ -128,4 +132,6 @@ class FineSelectionStage(object):
                 else:
                     raise ValueError(f"Task {task} is unknown!")
 
+        self.timer.stop_measurement()
+        self.timer.stop_measurement()
         return top_k_image_ids

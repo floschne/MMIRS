@@ -1,5 +1,4 @@
 import pickle
-import time
 
 import faiss
 import numpy as np
@@ -8,6 +7,7 @@ from pathlib import Path
 from sentence_transformers import util, SentenceTransformer
 from typing import Dict, Any
 
+from backend.util.mmirs_timer import MMIRSTimer
 from config import conf
 
 
@@ -78,6 +78,8 @@ class ContextPreselector(object):
                     k: faiss.read_index(v) for d in pssc_conf.faiss.asymmetric_indices for k, v in d.items()
                 }
 
+            cls.timer = MMIRSTimer()
+
         return cls.__singleton
 
     def faiss_index_available_for_dataset(self, dataset: str, symmetric: bool):
@@ -87,6 +89,18 @@ class ContextPreselector(object):
     def sentence_embeddings_available_for_dataset(self, dataset: str, symmetric: bool):
         embs = self.symmetric_embeddings if symmetric else self.asymmetric_embeddings
         return dataset in embs.keys()
+
+    def __compute_context_embedding(self, context: str):
+        self.timer.start_measurement('PSS::CPS::__compute_context_embedding')
+        # compute context embedding
+        context_embedding = self.sembedders['symm'].encode(context)
+
+        # normalize vector to unit length, so that inner product is equal to cosine similarity
+        context_embedding = context_embedding / np.linalg.norm(context_embedding)
+        context_embedding = np.expand_dims(context_embedding, axis=0)
+        self.timer.stop_measurement()
+
+        return context_embedding
 
     def retrieve_top_k_relevant_images(self,
                                        context: str,
@@ -109,16 +123,12 @@ class ContextPreselector(object):
         """
         # TODO for now we only use symmetric
         #   in later versions we want to decide this dynamically by analysing the query (embedding)
+        self.timer.start_measurement('PSS::CPS::retrieve_top_k_relevant_images')
         logger.debug(
             f"Retrieving top-{k} relevant images with exact={exact} in dataset {dataset} for context {context}")
-        start = time.time()
-        # compute context embedding
-        context_embedding = self.sembedders['symm'].encode(context)
-
-        # normalize vector to unit length, so that inner product is equal to cosine similarity
-        context_embedding = context_embedding / np.linalg.norm(context_embedding)
-        context_embedding = np.expand_dims(context_embedding, axis=0)
+        context_embedding = self.__compute_context_embedding(context)
         if not exact:
+            self.timer.start_measurement('PSS::CPS::retrieve_top_k_relevant_images.approx')
             if not self.faiss_index_available_for_dataset(dataset, symmetric=True):
                 logger.error(f"FAISS Index for dataset {dataset} not available!")
                 raise FileNotFoundError(f"FAISS Index for dataset {dataset} not available!")
@@ -132,7 +142,9 @@ class ContextPreselector(object):
 
             # We extract corpus ids and scores for the first query
             hits = [{'corpus_id': cid, 'score': score} for cid, score in zip(cids[0], distances[0])]
+            self.timer.stop_measurement()
         else:
+            self.timer.start_measurement('PSS::CPS::retrieve_top_k_relevant_images.exact')
             if not self.sentence_embeddings_available_for_dataset(dataset, symmetric=True):
                 logger.error(f"Sentence Embeddings for dataset {dataset} not available!")
                 raise FileNotFoundError(f"Sentence Embeddings for dataset {dataset} not available!")
@@ -144,12 +156,16 @@ class ContextPreselector(object):
             hits = util.semantic_search(context_embedding,
                                         embs,
                                         top_k=k)[0]
+            self.timer.stop_measurement()
 
         # sort by score
+        self.timer.start_measurement('PSS::CPS::sort_scores')
         hits = sorted(hits, key=lambda x: x['score'], reverse=True)
         # look up the document ids of the hits (the hits contain indices but we need the document id)
         corpus_ids = self.symmetric_embeddings[dataset]['corpus_ids']
         top_k_matches = {str(corpus_ids[hit['corpus_id']]): hit['score'] for hit in hits[:k]}
-        logger.info(f"Retrieving top-{k} relevant images with exact={exact} took {time.time() - start}s")
+        self.timer.stop_measurement()
+
+        self.timer.stop_measurement()
         # TODO add option to return the caption texts -> load the dataset dataframes and return the caps by id
         return top_k_matches

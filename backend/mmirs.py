@@ -7,6 +7,7 @@ from backend.fineselection.data import ImageFeaturePoolFactory
 from backend.fineselection.retriever import RetrieverFactory
 from backend.imgserver.py_http_image_server import PyHttpImageServer
 from backend.preselection import PreselectionStage
+from backend.util.mmirs_timer import MMIRSTimer
 from config import conf
 
 
@@ -30,6 +31,8 @@ class MMIRS(object):
             cls.pss = PreselectionStage()
             cls.fss = FineSelectionStage()
 
+            cls.timer = MMIRSTimer()
+
         return cls.__singleton
 
     # FIXME we cannot give a type hint for req: RetrievalRequest b
@@ -38,7 +41,7 @@ class MMIRS(object):
         Retrieves the top-k matching images according to focus and context in the specified image pool with the specified
         retriever.
         """
-
+        self.timer.start_measurement("MMIRS::top_k_images")
         focus = req.focus
         context = req.context
         top_k = req.top_k
@@ -80,6 +83,7 @@ class MMIRS(object):
         if return_wra_matrices:
             top_k_wra_urls = self.img_srv.get_wra_urls(top_k_img_ids)
             return top_k_img_urls, top_k_wra_urls
+        self.timer.stop_measurement()
         return top_k_img_urls
 
     def pss_retrieve_top_k_context_images(self,
@@ -90,7 +94,7 @@ class MMIRS(object):
         """
         Retrieves the top-k matching images according to the context from the PSS
         """
-
+        self.timer.start_measurement("MMIRS::pss_retrieve_top_k_context_images")
         # find relevant images via PreselectionStage
         top_k_img_ids = self.pss.retrieve_top_k_context_relevant_images(context=context,
                                                                         dataset=dataset,
@@ -108,6 +112,7 @@ class MMIRS(object):
 
         # get URLs
         top_k_img_urls = self.img_srv.get_img_urls(top_k_img_ids, dataset, annotated=False)
+        self.timer.stop_measurement()
         return top_k_img_urls
 
     def pss_retrieve_top_k_focus_images(self,
@@ -122,7 +127,7 @@ class MMIRS(object):
         """
         Retrieves the top-k matching images according to the focus from the PSS
         """
-
+        self.timer.start_measurement("MMIRS::pss_retrieve_top_k_focus_images")
         # find relevant images via PreselectionStage
         focus_relevant = self.pss.retrieve_top_k_focus_relevant_images(focus=focus,
                                                                        dataset=dataset,
@@ -150,6 +155,7 @@ class MMIRS(object):
 
         # get URLs
         top_k_img_urls = self.img_srv.get_img_urls(top_k_image_ids, dataset, annotated=False)
+        self.timer.stop_measurement()
         if return_similar_terms:
             return top_k_img_urls, similar_terms
         else:

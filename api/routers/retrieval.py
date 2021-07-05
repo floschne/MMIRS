@@ -1,5 +1,3 @@
-import time
-
 from fastapi import APIRouter
 from loguru import logger
 from starlette.responses import JSONResponse
@@ -11,8 +9,10 @@ from api.model.pss_context_retrieval_request import PSSContextRetrievalRequest
 from api.model.pss_focus_retrieval_request import PSSFocusRetrievalRequest
 from api.model.retriever import Retriever
 from backend import MMIRS
+from backend.util.mmirs_timer import MMIRSTimer
 
 router = APIRouter()
+timer = MMIRSTimer()
 
 PREFIX = '/retrieval'
 TAGS = ["retrieval"]
@@ -23,10 +23,13 @@ TAGS = ["retrieval"]
              description='Retrieve the top-k images for the query.')
 async def top_k_images(req: RetrievalRequest) -> JSONResponse:
     logger.info(f"POST request on {PREFIX}/top_k_images with RetrievalRequest: {req}")
-    start = time.time()
+    timer.start_new_timing_session()
     urls = MMIRS().retrieve_top_k_images(req)
-    logger.info(f"MMIRS execution took: {time.time() - start}")
-    return JSONResponse(content=urls)
+    if req.return_timings:
+        timings = timer.get_current_timing_session().get_measurements()
+        return JSONResponse(content={'urls': urls, 'timings': timings})
+    else:
+        return JSONResponse(content=urls)
 
 
 @router.post('/pss/top_k_context',
@@ -34,13 +37,16 @@ async def top_k_images(req: RetrievalRequest) -> JSONResponse:
              description='Retrieve the top-k context related images from the PreselectionStage')
 async def top_k_context(req: PSSContextRetrievalRequest) -> JSONResponse:
     logger.info(f"POST request on {PREFIX}/pss/top_k_context with req: {req}")
-    start = time.time()
+    timer.start_new_timing_session()
     urls = MMIRS().pss_retrieve_top_k_context_images(context=req.context,
                                                      dataset=req.dataset,
                                                      k=req.top_k,
                                                      exact=req.exact)
-    logger.info(f"MMIR execution took: {time.time() - start}")
-    return JSONResponse(content=urls)
+    if req.return_timings:
+        timings = timer.get_current_timing_session().get_measurements()
+        return JSONResponse(content={'urls': urls, 'timings': timings})
+    else:
+        return JSONResponse(content=urls)
 
 
 @router.post('/pss/top_k_focus',
@@ -48,7 +54,7 @@ async def top_k_context(req: PSSContextRetrievalRequest) -> JSONResponse:
              description='Retrieve the top-k focus related images from the PreselectionStage')
 async def top_k_focus(req: PSSFocusRetrievalRequest) -> JSONResponse:
     logger.info(f"POST request on {PREFIX}/pss/top_k_context with req: {req}")
-    start = time.time()
+    timer.start_new_timing_session()
     urls = MMIRS().pss_retrieve_top_k_focus_images(focus=req.focus,
                                                    dataset=req.dataset,
                                                    k=req.top_k,
@@ -56,8 +62,11 @@ async def top_k_focus(req: PSSFocusRetrievalRequest) -> JSONResponse:
                                                    top_k_similar=req.top_k_similar_terms,
                                                    max_similar=req.max_similar_terms,
                                                    return_similar_terms=req.return_similar_terms)
-    logger.info(f"MMIR execution took: {time.time() - start}")
-    return JSONResponse(content=urls)
+    if req.return_timings:
+        timings = timer.get_current_timing_session().get_measurements()
+        return JSONResponse(content={'urls': urls, 'timings': timings})
+    else:
+        return JSONResponse(content=urls)
 
 
 @router.get('/available_datasets',

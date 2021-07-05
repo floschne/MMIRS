@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from backend.fineselection.data import ImageFeaturePool, TeranISS
 from backend.fineselection.retriever.retriever import RetrieverType
+from backend.util.mmirs_timer import MMIRSTimer
 
 TERAN_PATH = 'models/teran'
 sys.path.append(TERAN_PATH)
@@ -34,6 +35,7 @@ class TeranPrecomputedImageEmbeddingsPool(ImageFeaturePool):
                                                    pre_fetch_in_memory=False,
                                                    fn_prefix=fn_prefix,
                                                    num_pre_fetch_workers=num_workers)
+        self.timer = MMIRSTimer()
         if pre_fetch:
             self.load_data_into_memory()
 
@@ -41,6 +43,7 @@ class TeranPrecomputedImageEmbeddingsPool(ImageFeaturePool):
         self.data.fetch_img_embs()
 
     def get_image_search_space(self, img_ids: Optional[List[str]]) -> TeranISS:
+        self.timer.start_measurement("TeranPrecomputedImageEmbeddingsPool::get_image_search_space")
         if img_ids is None or len(img_ids) == 0:
             # TODO this might be just to much for most of the servers...
             self.load_data_into_memory()
@@ -54,7 +57,9 @@ class TeranPrecomputedImageEmbeddingsPool(ImageFeaturePool):
                 img_ids = list(set([TeranPrecomputedImageEmbeddingsPool.fill_leading_coco_zeros(img_id) for img_id in img_ids]))
 
             subset = self.data.get_subset(image_ids=img_ids, pre_fetch_in_memory=True)
-        return TeranISS(images=subset)
+        tiss = TeranISS(images=subset)
+        self.timer.stop_measurement()
+        return tiss
 
     @staticmethod
     def fill_leading_coco_zeros(img_id: str):
