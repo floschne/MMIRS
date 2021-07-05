@@ -82,7 +82,9 @@ class MMIRS(object):
         top_k_img_urls = self.img_srv.get_img_urls(top_k_img_ids, dataset, annotated=annotate_max_focus_region)
         if return_wra_matrices:
             top_k_wra_urls = self.img_srv.get_wra_urls(top_k_img_ids)
+            self.timer.stop_measurement()
             return top_k_img_urls, top_k_wra_urls
+
         self.timer.stop_measurement()
         return top_k_img_urls
 
