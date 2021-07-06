@@ -62,6 +62,7 @@ class MMIRS(object):
                                                      max_num_focus_relevant=self._conf.pss.max_num_focus_relevant,
                                                      max_num_context_relevant=self._conf.pss.max_num_context_relevant,
                                                      max_num_relevant=self._conf.pss.max_num_relevant,
+                                                     min_num_relevant=self._conf.pss.min_num_relevant,
                                                      focus_weight_by_sim=self._conf.pss.focus_weight_by_sim,
                                                      exact_context_retrieval=self._conf.pss.exact_context_retrieval)
 

@@ -112,6 +112,7 @@ class PreselectionStage(object):
                                  max_num_focus_relevant: int = 5000,
                                  max_num_context_relevant: int = 5000,
                                  max_num_relevant: int = 5000,
+                                 min_num_relevant: int = 500,
                                  focus_weight_by_sim: bool = False,
                                  exact_context_retrieval: bool = False) -> List[str]:
 
@@ -130,6 +131,7 @@ class PreselectionStage(object):
         merged = self.__merge_relevant_images(focus=focus_relevant,
                                               context=context_relevant,
                                               max_num_relevant=max_num_relevant,
+                                              min_num_relevant=min_num_relevant,
                                               merge_op=merge_op)
         self.timer.stop_measurement()
 
