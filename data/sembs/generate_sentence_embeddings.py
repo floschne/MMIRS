@@ -77,7 +77,7 @@ def generate_sentence_embeddings(dataset_name: str,
 
     models = {'symmetric': symm_model, 'asymmetric': asym_model}
     for typ, model in models.items():
-        if results[typ] is None:
+        if results[typ] is None and model is not None:
             dst = asym_dst if 'asym' in typ else symm_dst
             logger.info(f"Loading Sentence Embedding Model '{model}' into Memory...")
             embedder = SentenceTransformer(model)
