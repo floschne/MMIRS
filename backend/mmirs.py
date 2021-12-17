@@ -22,10 +22,10 @@ class MMIRS(object):
             cls._conf = conf.mmirs
 
             # start the image server
-            if cls._conf.img_server == 'pyhttp':
+            if conf.mmirs.img_server == 'pyhttp':
                 cls.img_srv = PyHttpImageServer()
             else:
-                raise NotImplementedError(f"Image Server {cls._conf.img_server} not available!")
+                raise NotImplementedError(f"Image Server {conf.mmirs.img_server} not available!")
 
             # start the stages
             cls.pss = PreselectionStage()

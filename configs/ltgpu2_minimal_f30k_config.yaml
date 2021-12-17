@@ -61,11 +61,11 @@ preselection:
       symmetric_embeddings:
 #        - wicsmmir: data/sembs/wicsmmir_symm_embs.pkl
 #        - coco: data/sembs/coco_symm_embs.pkl
-        - f30k: data/sembs/f30k_symm_embs.pkl
+        f30k: data/sembs/f30k_symm_embs.pkl
       asymmetric_embeddings:
 #        - wicsmmir: data/sembs/wicsmmir_asym_embs.pkl
 #        - coco: data/sembs/coco_asymm_embs.pkl
-        - f30k: data/sembs/f30k_asymm_embs.pkl
+        f30k: data/sembs/f30k_asymm_embs.pkl
     faiss:
       symmetric_indices:
 #        - wicsmmir: data/faiss/wicsmmir_symm.faiss
@@ -74,7 +74,7 @@ preselection:
       asymmetric_indices:
 #        - wicsmmir: data/faiss/wicsmmir_asym.faiss
 #        - coco: data/faiss/cooc_asym.faiss
-        - f30k: data/faiss/f30k_asymm.faiss
+        f30k: data/faiss/f30k_asymm.faiss
       nprobe: 350  # Number of VCs to explorer at search time (tradeoff between search accuracy and search time)
 
 fine_selection:

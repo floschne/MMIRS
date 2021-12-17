@@ -1,11 +1,11 @@
 import pickle
+from pathlib import Path
+from typing import Dict, Any
 
 import faiss
 import numpy as np
 from loguru import logger
-from pathlib import Path
 from sentence_transformers import util, SentenceTransformer
-from typing import Dict, Any
 
 from backend.util.mmirs_timer import MMIRSTimer
 from config import conf
@@ -49,13 +49,13 @@ class ContextPreselector(object):
             logger.info("Loading SentenceEmbeddings into Memory...")
             if pssc_conf.use_symmetric:
                 cls.symmetric_embeddings = {
-                    k: load_sentence_embeddings(Path(v)) for d in pssc_conf.sbert.symmetric_embeddings for k, v in
-                    d.items()
+                    ds_name: load_sentence_embeddings(Path(embs_path))
+                    for ds_name, embs_path in pssc_conf.sbert.symmetric_embeddings.items()
                 }
             if pssc_conf.use_asymmetric:
                 cls.asymmetric_embeddings = {
-                    k: load_sentence_embeddings(Path(v)) for d in pssc_conf.sbert.asymmetric_embeddings for k, v in
-                    d.items()
+                    ds_name: load_sentence_embeddings(Path(embs_path))
+                    for ds_name, embs_path in pssc_conf.sbert.asymmetric_embeddings.items()
                 }
 
             logger.info("Loading SentenceTransformer Models into Memory...")
@@ -71,11 +71,13 @@ class ContextPreselector(object):
             logger.info("Loading FAISS Indices into Memory...")
             if pssc_conf.use_symmetric:
                 cls.symmetric_indices = {
-                    k: faiss.read_index(v) for d in pssc_conf.faiss.symmetric_indices for k, v in d.items()
+                    ds_name: faiss.read_index(idx_path)
+                    for ds_name, idx_path in pssc_conf.faiss.symmetric_indices.items()
                 }
             if pssc_conf.use_asymmetric:
                 cls.asymmetric_indices = {
-                    k: faiss.read_index(v) for d in pssc_conf.faiss.asymmetric_indices for k, v in d.items()
+                    ds_name: faiss.read_index(idx_path)
+                    for ds_name, idx_path in pssc_conf.faiss.asymmetric_indices.items()
                 }
 
             cls.timer = MMIRSTimer()

@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field, validator, root_validator
 from typing import Optional
 
+from pydantic import BaseModel, Field, validator, root_validator
+
+# FIXME this import takes a lot of time due to cascading imports
 from backend.fineselection.fine_selection_stage import RankedBy
 
 
@@ -16,8 +18,9 @@ class RetrievalRequest(BaseModel):
     annotate_max_focus_region: Optional[bool] = Field(
         description="If true, the region with the maximum focus signal is highlighted in the returned images",
         default=False)
-    ranked_by: Optional[RankedBy] = Field(description="Method to rank the images. Either by context, focus or combined",
-                                          default=RankedBy.COMBINED)
+    ranked_by: Optional[RankedBy] = Field(
+        description="Method to rank the images. Either by context, focus or combined",
+        default=RankedBy.COMBINED)
     focus_weight: Optional[float] = Field(
         description="Weight of the focus when ranking the images (w * focus + (1-2) * context)",
         default=0.5)

@@ -7,7 +7,6 @@ import api.routers.retrieval as retrieval
 from backend import MMIRS
 from backend.fineselection import FineSelectionStage
 from backend.imgserver.py_http_image_server import PyHttpImageServer
-from backend.util.mmirs_timer import MMIRSTimer
 from config import conf
 
 # create the main api
@@ -34,9 +33,6 @@ def startup_event():
 
     # start MMIRS
     MMIRS()
-
-    # start timer service
-    MMIRSTimer()
 
 
 # include the routers

@@ -31,7 +31,7 @@ class MaxFocusRegionAnnotator(object):
                                                          bboxes_root=datasources_conf[ds].bbox_root,
                                                          fn_prefix=datasources_conf[ds].fn_prefix,
                                                          fn_suffix=datasources_conf[ds].fn_suffix)
-            logger.info(f"MaxFocusRegionAnnotator has BBoxes datasources: {cls.__datasources}")
+            logger.debug(f"MaxFocusRegionAnnotator has BBoxes datasources: {cls.__datasources}")
 
             cls.__annotated_images_dst = cls.__conf.annotated_images_dst
             if not (os.path.lexists(cls.__annotated_images_dst) and os.path.isdir(cls.__annotated_images_dst)):
@@ -88,7 +88,7 @@ def annotate_max_focus_region(image_id: str,
                               img_path: str,
                               dataset: str,
                               focus_text: str) -> Tuple[str, str, str]:
-    logger.info(f"Annotating maximum focus region for image {image_id} of dataset {dataset}")
+    logger.debug(f"Annotating maximum focus region for image {image_id} of dataset {dataset}")
 
     # load bboxes
     bboxes = load_bboxes(bbox_fn)
@@ -98,8 +98,9 @@ def annotate_max_focus_region(image_id: str,
     # setup matplotlib so that the image gets drawn on the axes canvas in full size
     # https://stackoverflow.com/a/53816322
     dpi = mpl.rcParams['figure.dpi']
+    # FIXME Flo: better image io to be safe when sth is wrong with the image...
     im_data = plt.imread(img_path)
-    height, width, depth = im_data.shape
+    height, width = im_data.shape[0], im_data.shape[1]
     # Size of the figure in inches to fit the image
     figsize = width / float(dpi), height / float(dpi)
     # Create a figure of the right size with one axes that takes up the full figure
@@ -143,6 +144,6 @@ def annotate_max_focus_region(image_id: str,
 
     fig.savefig(dst)
     plt.clf()
-    logger.info(f"Persisted MaxFocus-annotated image at {dst}")
+    logger.debug(f"Persisted MaxFocus-annotated image at {dst}")
 
     return image_id, dst, 'anno'

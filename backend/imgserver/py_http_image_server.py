@@ -1,12 +1,12 @@
 import glob
+import http.server
 import os.path
+import socketserver
 import urllib.parse as url
 from concurrent.futures import ThreadPoolExecutor
-
-import http.server
-import socketserver
-from loguru import logger
 from typing import List
+
+from loguru import logger
 
 from backend.imgserver.image_server import ImageServer
 # TODO improve architecture wrt ImageServer superclass -> datasource instantiation
@@ -34,7 +34,6 @@ def http_server_task(http_server_root_dir: str, port: int, host: str):
 
 
 class PyHttpImageServer(ImageServer):
-
     __singleton = None
     _conf = None
 
@@ -46,13 +45,13 @@ class PyHttpImageServer(ImageServer):
             cls._conf = conf.image_server['pyhttp']
             cls._base_url = cls.__get_img_server_base_url()
 
-            cls.__link_root_dir = cls._conf.link_root_dir
-            if not os.path.lexists(cls.__link_root_dir):
-                os.makedirs(cls.__link_root_dir, exist_ok=True)
+            cls.link_root_dir = cls._conf.link_root_dir
+            if not os.path.lexists(cls.link_root_dir):
+                os.makedirs(cls.link_root_dir, exist_ok=True)
 
             if cls._conf.flush_link_dir:
-                logger.info(f"Flushing link root directory {cls.__link_root_dir}!")
-                for f in glob.glob(os.path.join(cls.__link_root_dir, "*")):
+                logger.info(f"Flushing link root directory {cls.link_root_dir}!")
+                for f in glob.glob(os.path.join(cls.link_root_dir, "*")):
                     os.remove(f)
 
             cls.annotated_images_filename_cache = dict()
@@ -62,7 +61,7 @@ class PyHttpImageServer(ImageServer):
             logger.info("Starting PyHttpImageServer Thread...")
             cls.http_server_thread = ThreadPoolExecutor(max_workers=1)
             cls.http_server_thread.submit(http_server_task,
-                                          http_server_root_dir=cls.__link_root_dir,
+                                          http_server_root_dir=cls.link_root_dir,
                                           port=cls._conf.port,
                                           host=cls._conf.host)
             cls.timer = MMIRSTimer()
@@ -86,7 +85,7 @@ class PyHttpImageServer(ImageServer):
         return base_url
 
     def __hard_link_into_link_root_dir(self, image_path: str, force: bool = False) -> str:
-        link_dst = str(os.path.join(self.__link_root_dir, os.path.basename(image_path)))
+        link_dst = str(os.path.join(self.link_root_dir, os.path.basename(image_path)))
         if not os.path.lexists(image_path):
             logger.warning(f"Cannot read {image_path}!")
         elif not os.path.lexists(link_dst):
@@ -134,6 +133,13 @@ class PyHttpImageServer(ImageServer):
             logger.error(f"Images for Dataset {dataset} are not available!")
             raise KeyError(f"Images for Dataset {dataset} are not available!")
         return self.datasources[dataset].get_image_path(img_id)
+
+    @staticmethod
+    def get_image_id(img_url: str) -> str:
+        return os.path.splitext(os.path.basename(img_url))[0].replace("_annotated", "").replace("_wra", "")
+
+    def get_image_ids(self, img_urls: List[str]) -> List[str]:
+        return [self.get_image_id(img_url) for img_url in img_urls]
 
     def register_annotated_image(self, img_id: str, dataset: str, annotated_image_path: str):
         self.__hard_link_into_link_root_dir(annotated_image_path, force=True)
