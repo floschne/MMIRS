@@ -42,6 +42,8 @@ class TeranRetriever(Retriever):
         self.teran = teran
         self.model_config = teran_config
 
+        self.query_encoder = QueryEncoder(self.model_config, self.teran)
+
         self.timer = MMIRSTimer()
 
     @logger.catch
@@ -57,8 +59,7 @@ class TeranRetriever(Retriever):
         self.timer.start_measurement("TeranRetriever::find_top_k_images")
         self.timer.start_measurement("TeranRetriever::find_top_k_images::compute_query_embedding")
         # compute query embedding
-        query_encoder = QueryEncoder(self.model_config, self.teran)
-        query_embs, query_lengths = query_encoder.compute_query_embedding(context)
+        query_embs, query_lengths = self.query_encoder.compute_query_embedding(context)
         self.timer.stop_measurement()
 
         # get the precomputed image embeddings and lengths tensors to compute the similarity with the query embedding
