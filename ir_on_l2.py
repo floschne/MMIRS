@@ -122,7 +122,7 @@ def run_no_pss_retrieval(df: DataFrame, opts: argparse.Namespace) -> str:
         top_k_image_ids = res['top_k'][opts.ranking_method]
         top_k_results.append(top_k_image_ids)
 
-        if idx % opts.persist_step:
+        if idx % opts.persist_step == 0:
             persist_top_k_results_in_result_dataframe(top_k_results=top_k_results,
                                                       df=df,
                                                       opts=opts)
@@ -174,7 +174,7 @@ def run_retrieval_with_pss(df: DataFrame, opts: argparse.Namespace) -> str:
 
         top_k_results.append(top_k_img_ids)
 
-        if idx % opts.persist_step:
+        if idx % opts.persist_step == 0:
             persist_top_k_results_in_result_dataframe(top_k_results=top_k_results,
                                                       df=df,
                                                       opts=opts)
