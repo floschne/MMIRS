@@ -36,20 +36,22 @@ def load_dataset(path: str, use_focus: bool = False) -> DataFrame:
 def persist_top_k_results_in_result_dataframe(top_k_results: List[List[str]],
                                               df: DataFrame,
                                               opts: argparse.Namespace) -> str:
-    # save the top k in the dataframe
-    df['top_k'] = top_k_results
-
-    # persist
+    # generate filename for results df
     if opts.use_focus:
         fn = f'top_k_images_{opts.retriever_name}_{opts.dataset}_fw_{opts.focus_weight}.df.feather'
     else:
         fn = f'top_k_images_{opts.retriever_name}_{opts.dataset}.df.feather'
-
     os.makedirs(opts.output_path, exist_ok=True)
     fn = os.path.join(opts.output_path, fn)
 
+    # save the top k in the results dataframe
+    new_df = df[:len(top_k_results)]
+    new_df['top_k'] = top_k_results
+
+    # persist
     logger.info(f"Persisting results at {fn}")
-    df.to_feather(os.path.join(opts.output_path, fn))
+    new_df.reset_index(drop=True).to_feather(os.path.join(opts.output_path, fn))
+
     return fn
 
 
@@ -120,6 +122,11 @@ def run_no_pss_retrieval(df: DataFrame, opts: argparse.Namespace) -> str:
         top_k_image_ids = res['top_k'][opts.ranking_method]
         top_k_results.append(top_k_image_ids)
 
+        if idx % opts.persist_step:
+            persist_top_k_results_in_result_dataframe(top_k_results=top_k_results,
+                                                      df=df,
+                                                      opts=opts)
+
     return persist_top_k_results_in_result_dataframe(top_k_results=top_k_results,
                                                      df=df,
                                                      opts=opts)
@@ -156,16 +163,21 @@ def run_retrieval_with_pss(df: DataFrame, opts: argparse.Namespace) -> str:
 
     logger.info(f"Starting retrieval of {len(reqs)} samples!")
     top_k_results = []
-    for i, req in tqdm(enumerate(reqs), desc="Retrieval progress: ", total=len(reqs)):
+    for idx, req in tqdm(enumerate(reqs), desc="Retrieval progress: ", total=len(reqs)):
         if opts.return_wra_matrices:
             top_k_img_urls, top_k_wra_urls = MMIRS().retrieve_top_k_images(req)
         else:
-            top_k_img_urls = MMIRS().retrieve_top_k_images(req)
+            top_k_img_urls = mmirs.retrieve_top_k_images(req)
 
         top_k_img_ids = img_srv.get_image_ids(top_k_img_urls)
-        top_k_img_ids = safe_annotated_images(top_k_img_ids, opts, id_prefix=str(i))
+        top_k_img_ids = safe_annotated_images(top_k_img_ids, opts, id_prefix=str(idx))
 
         top_k_results.append(top_k_img_ids)
+
+        if idx % opts.persist_step:
+            persist_top_k_results_in_result_dataframe(top_k_results=top_k_results,
+                                                      df=df,
+                                                      opts=opts)
 
     return persist_top_k_results_in_result_dataframe(top_k_results=top_k_results,
                                                      df=df,
@@ -210,6 +222,7 @@ if __name__ == '__main__':
                         type=str,
                         choices=['info', 'debug', 'error', "warning"],
                         default="info")
+    parser.add_argument('--persist_step', type=int, default=100)
     opts = parser.parse_args()
 
     logger.remove()
