@@ -38,9 +38,9 @@ def persist_top_k_results_in_result_dataframe(top_k_results: List[List[str]],
                                               opts: argparse.Namespace) -> str:
     # generate filename for results df
     if opts.use_focus:
-        fn = f'top_k_images_{opts.retriever_name}_{opts.dataset}_fw_{opts.focus_weight}.df.feather'
+        fn = f'top_k_images_{opts.retriever_name}_{opts.image_dataset}_fw_{opts.focus_weight}.df.feather'
     else:
-        fn = f'top_k_images_{opts.retriever_name}_{opts.dataset}.df.feather'
+        fn = f'top_k_images_{opts.retriever_name}_{opts.image_dataset}.df.feather'
     os.makedirs(opts.output_path, exist_ok=True)
     fn = os.path.join(opts.output_path, fn)
 
