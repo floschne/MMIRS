@@ -55,8 +55,8 @@ def persist_top_k_results_in_result_dataframe(top_k_results: List[List[str]],
     return fn
 
 
-def prepare_config(opts: argparse.Namespace) -> None:
-    logger.info("Preparing config...")
+def prepare_mmirs_config(opts: argparse.Namespace) -> None:
+    logger.info("Preparing MMIRS config...")
     not_selected_ds = []
     selected = opts.image_dataset
     for ds in conf.image_server.datasources:
@@ -132,7 +132,7 @@ def run_no_pss_retrieval(df: DataFrame, opts: argparse.Namespace) -> str:
                                                      opts=opts)
 
 
-def safe_annotated_images(top_k_img_ids: List[str],
+def save_annotated_images(top_k_img_ids: List[str],
                           opts: argparse.Namespace,
                           id_prefix: Optional[str] = None) -> List[str]:
     dst_root_p = conf.fine_selection.max_focus_annotator.annotated_images_dst
@@ -149,7 +149,7 @@ def safe_annotated_images(top_k_img_ids: List[str],
 
 
 def run_retrieval_with_pss(df: DataFrame, opts: argparse.Namespace) -> str:
-    prepare_config(opts)
+    prepare_mmirs_config(opts)
     # build the retrieval request list from the dataframe
     reqs = build_retrieval_requests(df, opts)
 
@@ -170,7 +170,7 @@ def run_retrieval_with_pss(df: DataFrame, opts: argparse.Namespace) -> str:
             top_k_img_urls = mmirs.retrieve_top_k_images(req)
 
         top_k_img_ids = img_srv.get_image_ids(top_k_img_urls)
-        top_k_img_ids = safe_annotated_images(top_k_img_ids, opts, id_prefix=str(idx))
+        top_k_img_ids = save_annotated_images(top_k_img_ids, opts, id_prefix=str(idx))
 
         top_k_results.append(top_k_img_ids)
 
