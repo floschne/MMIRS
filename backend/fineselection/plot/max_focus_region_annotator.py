@@ -1,11 +1,12 @@
+import gc
 import os
 from concurrent.futures import ProcessPoolExecutor, Future
+from typing import List, Tuple
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
-from typing import List, Tuple
 
 from backend.fineselection.plot.bboxes_datasource import BBoxesDatasource
 from backend.imgserver.py_http_image_server import PyHttpImageServer
@@ -47,6 +48,7 @@ class MaxFocusRegionAnnotator(object):
     def get_max_focus_annotated_image_path(self, image_id: str):
         return os.path.join(self.__annotated_images_dst, f"{image_id}_annotated.png")
 
+    @logger.catch(reraise=True)
     def annotate_max_focus_regions(self,
                                    pool: ProcessPoolExecutor,
                                    image_ids: List[str],
@@ -81,6 +83,7 @@ def load_bboxes(bbox_fn: str) -> np.ndarray:
     return feat['bbox']
 
 
+@logger.catch(reraise=True)
 def annotate_max_focus_region(image_id: str,
                               bbox_fn: str,
                               max_focus_region_idx: int,
@@ -94,6 +97,9 @@ def annotate_max_focus_region(image_id: str,
     bboxes = load_bboxes(bbox_fn)
     # find the bbox with maximum focus signal in the WRA matrix
     foc_bb = bboxes[max_focus_region_idx]
+    # free bboxes memory
+    del bboxes
+
 
     # setup matplotlib so that the image gets drawn on the axes canvas in full size
     # https://stackoverflow.com/a/53816322
@@ -144,6 +150,9 @@ def annotate_max_focus_region(image_id: str,
 
     fig.savefig(dst)
     plt.clf()
+    plt.cla()
+    plt.close("all")
+    gc.collect()
     logger.debug(f"Persisted MaxFocus-annotated image at {dst}")
 
     return image_id, dst, 'anno'

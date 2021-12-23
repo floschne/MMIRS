@@ -1,4 +1,5 @@
 import argparse
+import gc
 import glob
 import os
 import shutil
@@ -98,6 +99,7 @@ def build_retrieval_requests(df: DataFrame, opts: argparse.Namespace) -> List[Re
     return reqs
 
 
+@logger.catch(reraise=True)
 def run_no_pss_retrieval(df: DataFrame, opts: argparse.Namespace) -> str:
     # instantiate retriever and image pool
     retriever_factory = RetrieverFactory()
@@ -121,6 +123,8 @@ def run_no_pss_retrieval(df: DataFrame, opts: argparse.Namespace) -> str:
                                           iss=iss)
         top_k_image_ids = res['top_k'][opts.ranking_method]
         top_k_results.append(top_k_image_ids)
+        del res
+
 
         if idx % opts.persist_step == 0:
             persist_top_k_results_in_result_dataframe(top_k_results=top_k_results,
@@ -148,6 +152,7 @@ def save_annotated_images(top_k_img_ids: List[str],
     return top_k_img_ids_with_prefix
 
 
+@logger.catch(reraise=True)
 def run_retrieval_with_pss(df: DataFrame, opts: argparse.Namespace) -> str:
     prepare_mmirs_config(opts)
     # build the retrieval request list from the dataframe
@@ -173,11 +178,14 @@ def run_retrieval_with_pss(df: DataFrame, opts: argparse.Namespace) -> str:
         top_k_img_ids = save_annotated_images(top_k_img_ids, opts, id_prefix=str(idx))
 
         top_k_results.append(top_k_img_ids)
+        del top_k_img_ids
 
         if idx % opts.persist_step == 0:
             persist_top_k_results_in_result_dataframe(top_k_results=top_k_results,
                                                       df=df,
                                                       opts=opts)
+            img_srv.clear_cache()
+            gc.collect()
 
     return persist_top_k_results_in_result_dataframe(top_k_results=top_k_results,
                                                      df=df,

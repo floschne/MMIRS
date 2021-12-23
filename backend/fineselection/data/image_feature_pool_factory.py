@@ -35,6 +35,7 @@ class ImageFeaturePoolFactory(object):
 
         pool_conf = self._conf[source_dataset][retriever_name]
         if RetrieverType.TERAN in retriever_name.lower():
+            logger.info(f"Creating TeranPrecomputedImageEmbeddingsPool for {retriever_name}...")
             pool = TeranPrecomputedImageEmbeddingsPool(source_dataset=source_dataset,
                                                        pre_fetch=pool_conf.pre_fetch,
                                                        feats_root=pool_conf.feats_root,

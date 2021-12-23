@@ -67,6 +67,12 @@ class PyHttpImageServer(ImageServer):
             cls.timer = MMIRSTimer()
         return cls.__singleton
 
+    def clear_cache(self, annotated: bool = True, wra: bool = True):
+        if annotated:
+            self.annotated_images_filename_cache.clear()
+        if wra:
+            self.wra_plot_filename_cache.clear()
+
     # noinspection PyUnresolvedReferences,PyProtectedMember
     def shutdown(self):
         logger.info(f'Shutting down PyHttpImageServer!')

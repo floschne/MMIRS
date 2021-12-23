@@ -1,14 +1,15 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures.process import BrokenProcessPool
+from enum import unique, Enum
+from typing import List, Optional, Dict, Union
 
 import numpy as np
-from enum import unique, Enum
 from loguru import logger
-from typing import List, Optional
 
 from backend.fineselection.data.image_feature_pool_factory import ImageFeaturePoolFactory
 from backend.fineselection.plot.max_focus_region_annotator import MaxFocusRegionAnnotator
 from backend.fineselection.plot.wra_plotter import WRAPlotter
-from backend.fineselection.retriever import RetrieverFactory
+from backend.fineselection.retriever import RetrieverFactory, Retriever
 from backend.imgserver.py_http_image_server import PyHttpImageServer
 from backend.util.mmirs_timer import MMIRSTimer
 from config import conf
@@ -93,8 +94,48 @@ class FineSelectionStage(object):
                                                   return_separated_ranks=return_separated_ranks or annotate_max_focus_region)
 
         top_k_image_ids = result_dict['top_k'][ranked_by.value]
-
         self.timer.start_measurement("FSS::annotate_max_focus_region_and_plot_wra")
+        try:
+            self._run_plotting_methods(context=context,
+                                       focus=focus,
+                                       dataset=dataset,
+                                       ranked_by=ranked_by,
+                                       result_dict=result_dict,
+                                       retriever=retriever,
+                                       annotate_max_focus_region=annotate_max_focus_region,
+                                       return_wra_matrices=return_wra_matrices)
+        except BrokenProcessPool as e:
+            logger.error(e)
+            logger.error("Shutting down broken worker pool...")
+            self.worker_pool.shutdown(wait=False, cancel_futures=True)
+            logger.error("Instantiating new worker pool...")
+            self.worker_pool = ProcessPoolExecutor(max_workers=conf.fine_selection.max_workers)
+            logger.error("Retrying plotting methods one more time...")
+            self._run_plotting_methods(context=context,
+                                       focus=focus,
+                                       dataset=dataset,
+                                       ranked_by=ranked_by,
+                                       result_dict=result_dict,
+                                       retriever=retriever,
+                                       annotate_max_focus_region=annotate_max_focus_region,
+                                       return_wra_matrices=return_wra_matrices)
+
+        self.timer.stop_measurement()
+        self.timer.stop_measurement()
+        return top_k_image_ids
+
+    def _run_plotting_methods(self,
+                              context: str,
+                              focus: Optional[str],
+                              dataset: str,
+                              ranked_by: RankedBy,
+                              result_dict: Dict[str, Dict[str, Union[List[str], np.ndarray, np.ndarray]]],
+                              retriever: Retriever,
+                              annotate_max_focus_region: bool,
+                              return_wra_matrices: bool):
+
+        top_k_image_ids = result_dict['top_k'][ranked_by.value]
+
         if annotate_max_focus_region or return_wra_matrices:
             wra_matrices: np.ndarray = result_dict['wra'][ranked_by.value]
             focus_span = retriever.find_focus_span_in_context(context=context, focus=focus)
@@ -131,7 +172,3 @@ class FineSelectionStage(object):
                     self.img_server.register_wra_plot(img_id=iid, wra_plot_path=dst)
                 else:
                     raise ValueError(f"Task {task} is unknown!")
-
-        self.timer.stop_measurement()
-        self.timer.stop_measurement()
-        return top_k_image_ids
