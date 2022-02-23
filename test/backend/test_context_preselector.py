@@ -7,27 +7,27 @@ from backend.preselection import ContextPreselector
 
 
 @pytest.fixture
-def cps():
+def cps() -> ContextPreselector:
     return ContextPreselector()
 
 
 @pytest.fixture
-def ks():
+def ks() -> list:
     return [10, 100, 1000, 10000]
 
 
 @pytest.fixture
-def qs():
+def qs() -> list:
     return ["A brown dog is playing with a red ball",
             "Original white Wii standing upright on its stand next to a Wii Remote."]
 
 
 @pytest.fixture
-def ds():
+def ds() -> list:
     return ["wicsmmir", "coco"]
 
 
-def test_retrieve_top_k_relevant_images(cps, ks, ds, qs):
+def test_retrieve_top_k_relevant_images(cps: ContextPreselector, ks: list, ds: list, qs: list):
     for d in ds:
         for k in ks:
             logger.debug(f'Running retrieve_top_k_relevant_images with k={k} and exact=False')
@@ -39,7 +39,7 @@ def test_retrieve_top_k_relevant_images(cps, ks, ds, qs):
                     assert len(relevant) == k
 
 
-def test_retrieve_top_k_relevant_images_exact(cps, ks, qs):
+def test_retrieve_top_k_relevant_images_exact(cps: ContextPreselector, ks: list, ds: list,  qs: list):
     for d in ds:
         for k in ks:
             logger.debug(f'Running retrieve_top_k_relevant_images with k={k} and exact=True')
